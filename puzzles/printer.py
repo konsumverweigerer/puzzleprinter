@@ -4,13 +4,11 @@ import ConfigParser,StringIO
 from boto.utils import fetch_file
 import md5,os
 from reportlab.lib import colors
-from reportlab.graphics.shapes import *
 from reportlab.lib.units import inch, cm, mm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
 from reportlab.platypus import Paragraph, Frame
-from reportlab.graphics import renderPDF
+from PIL import Image
 
 if not os.path.exists(PRINTERDIR):
   os.mkdir(PRINTERDIR)
@@ -35,6 +33,7 @@ class Order:
     puzzle_type="1000"
     puzzle_s3=None
     puzzle_data=None
+    puzzle_title="Mein Puzzle"
     state="ODR"
     template="std"
     shipping_name=""
@@ -59,11 +58,12 @@ class Order:
         return ""
 
     def getimage(self):
-        if puzzle_data:
-            return puzzle_data
-        if puzzle_s3:
+        if self.puzzle_data:
+            return self.puzzle_data
+        if self.puzzle_s3:
             f = fetch_file(puzzle_s3,username=AWSKEYID,password=AWSSECRET)
-            return f.read()
+            self.puzzle_data = f.read()
+            return self.puzzle_data
         return None
 
     def createpuzzle(self):
@@ -72,9 +72,12 @@ class Order:
             if t[0]==self.puzzle_type:
                 dimensions = t[2]
         puzzle = ""
-        d = Drawing(dimensions[0]*mm,dimensions[1]*mm)
-        renderPDF
-        return (puzzle,"")
+        puzzleio = StringIO.StringIO()
+        c = Canvas(puzzleio,pagesize=(dimensions[0]*mm,dimensions[1]*mm))
+        c.drawInlineImage(Image.open(self.getimage()),0,0,width=dimensions[0]*mm,height=dimensions[1]*mm)
+        c.showPage()
+        c.save()
+        return (puzzleio.buf,"")
 
     def write(self):
         if "ODR"!=state:
@@ -121,3 +124,12 @@ class Order:
         data.write(open(os.path.join(PRINTERDIR,tmpname),'w'))
         os.rename(os.path.join(PRINTERDIR,tmpname),os.path.join(PRINTERDIR,filename))
 
+    def read(self,filename):
+        data = MyConfigParser()
+        pass
+
+    @static
+    def fromFile(filename):
+        o = Order()
+        o.read(filename)
+        return o
