@@ -19,6 +19,10 @@ class Order(models.Model):
         (u'N', u'Not synchronized'),
         (u'S', u'Synchronized'),
     )
+    APPROVAL = (
+        (u'N', u'Not approved'),
+        (u'A', u'Approved'),
+    )
     order_status = models.CharField(max_length=4,choices=STATUS)
     order_id = models.CharField(max_length=64)
     shipping_id = models.CharField(max_length=64)
@@ -28,16 +32,20 @@ class Order(models.Model):
     shipping_zipcode = models.CharField(max_length=255)
     shipping_city = models.CharField(max_length=255)
     shipping_country = models.CharField(max_length=255)
+    shipping_type = models.CharField(max_length=40,choices=TRACKING)
     shipping_status = models.CharField(max_length=4,choices=SHIPPING)
     shipping_tracking = models.CharField(max_length=4,choices=TRACKING)
     shopsync = models.CharField(max_length=4,choices=SHOPSYNC)
     printsync = models.CharField(max_length=4,choices=PRINTSYNC)
+    approval = models.CharField(max_length=4,choices=APPROVAL)
 
 class Puzzle(models.Model):
     puzzle_id = models.CharField(max_length=64)
     puzzle_type = models.CharField(max_length=64)
     puzzle_template = models.CharField(max_length=64)
+    puzzle_orientation = models.CharField(max_length=64)
     puzzle_title = models.CharField(max_length=255)
+    puzzle_text = models.CharField(max_length=1000)
     printing_status = models.CharField(max_length=1000)
     order = models.ForeignKey(Order)
 

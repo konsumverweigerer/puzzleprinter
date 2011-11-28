@@ -10,7 +10,7 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, Frame
 from PIL import Image
 
-def rendercover(template,canvas,image,title,width,height):
+def rendercover(template,orientation,canvas,image,title,width,height):
     pass
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
@@ -30,12 +30,14 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
 
 class Order:
     order_id = ""
+    puzzle_id = ""
     puzzle_type = "1000"
     puzzle_s3 = None
     puzzle_data = None
     puzzle_title = "Mein Puzzle"
     state = "ODR"
     template = "std"
+    orientation = "horizontal"
     shipping_name = ""
     shipping_street = ""
     shipping_number = ""
@@ -48,9 +50,9 @@ class Order:
 
     def generatebarcode(self):
         if len(PRINTERKN)==2:
-            return PRINTERKN+str(int(md5.md5(order_id).hexdigest(),16)%10000000000)
+            return PRINTERKN+str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%10000000000)
         elif len(PRINTERKN)==3:
-            return "0"+PRINTERKN+str(int(md5.md5(order_id).hexdigest(),16)%100000000)
+            return "0"+PRINTERKN+str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
         return ""
 
     def generatebooktype(self):
@@ -63,7 +65,7 @@ class Order:
         if self.puzzle_data:
             return self.puzzle_data
         if self.puzzle_s3:
-            f = fetch_file(puzzle_s3,username=AWSKEYID,password=AWSSECRET)
+            f = fetch_file(self.puzzle_s3,username=AWSKEYID,password=AWSSECRET)
             self.puzzle_data = f.read()
             return self.puzzle_data
         return None
@@ -78,16 +80,20 @@ class Order:
         coverio = StringIO.StringIO()
         image = Image.open(self.getimage())
         c = Canvas(puzzleio,pagesize=(dimensions[0]*mm,dimensions[1]*mm))
-        c.drawInlineImage(image,0,0,width=dimensions[0]*mm,height=dimensions[1]*mm)
+        if self.orientation=="horizontal":
+            c.drawInlineImage(image,0,0,width=dimensions[0]*mm,height=dimensions[1]*mm)
+        else:
+            c.rotate(90)
+            c.drawInlineImage(image,0,0,width=dimensions[1]*mm,height=dimensions[0]*mm)
         c.showPage()
         c.save()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
-        rendercover(self.template,c,image,self.puzzle_title,dimensions[2],dimensions[3])
+        rendercover(self.template,self.orientation,c,image,self.puzzle_title,dimensions[2],dimensions[3])
         c.showPage()
         c.save()
         return (puzzleio.buf,coverio.buf)
 
-    def write(self):
+    def write(self,directory=None):
         if "ODR"!=state:
             return
         ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
@@ -100,14 +106,23 @@ class Order:
             data = MyConfigParser()
             puzzlepdf = "I"+basename+".pdf"
             coverpdf = "U"+basename+".pdf"
-            if not os.path.exists(dirname):
-                ftp.mkd(basename)
+            if directory:
+                try:
+                    os.mkdir(os.path.join(directory,pathname))
+                except:
+                    pass
+            else:
+                if not os.path.exists(dirname):
+                    ftp.mkd(basename)
             (puzzle,cover) = self.createpuzzle(basename)
 
-            ftp.cwd("/")
-            ftp.cwd(basename)
-            ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
-            ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
+            if directory:
+                pass
+            else:
+                ftp.cwd("/")
+                ftp.cwd(basename)
+                ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
+                ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
 
             data.add_section("Order")
             data.set("Order","CustomersShortName",PRINTERSN)
@@ -192,9 +207,10 @@ def readorders(status=['ODR','FLT','WRK','ACC']):
         ftp.quit()
     return orders
 
-def putorder(orderid,s3,template,address={}):
+def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",address={}):
     order = Order()
     order.order_id = orderid
+    order.puzzle_id = puzzleid
     order.puzzle_s3 = s3
     order.template = template
     order.shipping_name = address["name"]
