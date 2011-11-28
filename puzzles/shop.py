@@ -9,6 +9,10 @@ def openOrders():
     orders = [details(0,order=x.to_dict()) for x in Order.find(limit=250,financial_status="paid") if x.attributes["fulfillment_status"]==None]
     return [x for x in orders if len(x[1])>0]
 
+def sentOrders():
+    orders = [x for x in Order.find(limit=250,financial_status="paid") if x.attributes["fulfillment_status"]!=None]
+    return [x for x in orders if len(x[1])>0]
+
 def details(orderid,order=None):
     if not order:
         order = Order.get(int(orderid))
@@ -16,7 +20,9 @@ def details(orderid,order=None):
     return (order,products,order["shipping_address"])
 
 def startFullfillment(orderid):
-    pass
+    f = Fulfillment(dict(order_id=orderid))
+    f.save()
+    return f
 
 def updateFullfillment(orderid):
     pass
