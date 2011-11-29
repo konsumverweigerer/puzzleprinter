@@ -8,9 +8,10 @@ from reportlab.lib.units import inch, cm, mm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, Frame
+from reportlab.graphics.barcode import *
 from PIL import Image
 
-def rendercover(template,orientation,canvas,image,title,width,height):
+def rendercover(template,orientation,canvas,image,title,width,height,barcode):
     pass
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
@@ -70,7 +71,7 @@ class Order:
             return self.puzzle_data
         return None
 
-    def createpuzzle(self):
+    def createpuzzle(self,bc):
         dimensions = (100,100,100,100)
         for t in PUZZLETYPES:
             if t[0]==self.puzzle_type:
@@ -88,7 +89,8 @@ class Order:
         c.showPage()
         c.save()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
-        rendercover(self.template,self.orientation,c,image,self.puzzle_title,dimensions[2],dimensions[3])
+        barcode = barcode.createBarcodeDrawing("EAN13",value=bc)
+        rendercover(self.template,self.orientation,c,image,self.puzzle_title,dimensions[2],dimensions[3],barcode)
         c.showPage()
         c.save()
         return (puzzleio.buf,coverio.buf)
@@ -114,10 +116,11 @@ class Order:
             else:
                 if not os.path.exists(dirname):
                     ftp.mkd(basename)
-            (puzzle,cover) = self.createpuzzle(basename)
+            (puzzle,cover) = self.createpuzzle(basename,basename)
 
             if directory:
-                pass
+                open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
+                open(os.path.join(directory,basename,coverpdf),'w').write(cover)
             else:
                 ftp.cwd("/")
                 ftp.cwd(basename)
@@ -150,15 +153,23 @@ class Order:
 
             if self.additionaldata:
                 additionalpdf = "additional.pdf"
-                ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(additionaldata))
+                if directory:
+                    open(os.path.join(directory,basename,additionalpdf),'w').write(additionaldata)
+                else:
+                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(additionaldata))
                 data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+self.additionalpdf)
             dataio = StringIO.StringIO()
             data.write(dataio)
-            ftp.cwd("/")
-            ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio))
-    #        ftp.rename(tmpname,filename)
+            if directory:
+                open(os.path.join(directory,tmpname),'w').write(dataio.buf)
+                os.rename(os.path.join(directory,tmpname),os.path.join(directory,filename))
+            else:
+                ftp.cwd("/")
+                ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.buf))
+#                ftp.rename(tmpname,filename)
         finally:
-            ftp.quit()
+            if not directory:
+                ftp.quit()
 
     def read(self,fn,fp,statusfp=[]):
         data = MyConfigParser()
