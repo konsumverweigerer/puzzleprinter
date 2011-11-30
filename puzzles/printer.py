@@ -14,19 +14,6 @@ from reportlab.graphics import barcode
 from reportlab.pdfbase import pdfmetrics
 from PIL import Image
 
-COLORTABLE = (
-    ("1","#333333"),
-    ("2","#FFFFFF"),
-    ("3","#7D0E19"),
-    ("4","#DD5B78"),
-    ("5","#FF8E1D"),
-    ("6","#FFFF00"),
-    ("7","#91B329"),
-    ("8","#1B8B34"),
-    ("9","#003E6F"),
-    ("10","#2DC0C8"),
-)
-
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
         return optionstr
@@ -255,12 +242,15 @@ def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",color="
     order.shipping_country = address["country"]
     order.write(directory=directory)
 
-def demo(d,s3,title):
+def demo(d,s3,title,orientation=None,puzzle_type=None):
     order = Order()
     order.puzzle_s3 = s3
     order.puzzle_title = title
     order.puzzle_id = "2153432"
     order.order_id = "837642"
-    order.orientation = "vert"
+    if orientation:
+        order.orientation = orientation
+    if puzzle_type:
+        order.puzzle_type = puzzle_type
     return order.write(d)
 
