@@ -14,7 +14,7 @@ ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIF
 #
 #sizeId
 #=======
-#Puzzel grösse / Anzahl der Teile.
+#Puzzel groesse / Anzahl der Teile.
 #
 #1 = 100 Teile
 #2 = 200 Teile
@@ -24,7 +24,7 @@ ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIF
 #formatId
 #===========
 #Format des bildes in der demo war auch eine Herzform. Nach meinem letzten stand gibt es dieses feature
-#nicht mehr also alles ist im Querformat. (Die Formatid wird trotzdem übertragen.)
+#nicht mehr also alles ist im Querformat. (Die Formatid wird trotzdem uebertragen.)
 #1 = Querformat
 #2 = Hochformat
 #

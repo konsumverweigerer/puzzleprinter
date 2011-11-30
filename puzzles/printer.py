@@ -1,28 +1,31 @@
 from puzzlesettings import *
 
 import ConfigParser,StringIO
+from puzzles import templates
 from boto.utils import fetch_file
 import md5,os,ftplib
 from reportlab.lib import colors
-from reportlab.lib.units import inch, cm, mm
+from reportlab.lib.units import inch,cm,mm
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Paragraph, Frame
+from reportlab.platypus import Paragraph,Frame
 from reportlab.lib.utils import ImageReader
 from reportlab.graphics import barcode
+from reportlab.pdfbase import pdfmetrics
 from PIL import Image
 
-def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,height,barcode):
-    if "std"==template and "100"==puzzletype and "horizontal"==orientation:
-        pass
-    elif "std"==template and "200"==puzzletype and "horizontal"==orientation:
-        pass
-    elif "std"==template and "500"==puzzletype and "horizontal"==orientation:
-        pass
-    elif "std"==template and "1000"==puzzletype and "horizontal"==orientation:
-        pass
-    else:
-        pass
+COLORTABLE = (
+    ("1","#333333"),
+    ("2","#FFFFFF"),
+    ("3","#7D0E19"),
+    ("4","#DD5B78"),
+    ("5","#FF8E1D"),
+    ("6","#FFFF00"),
+    ("7","#91B329"),
+    ("8","#1B8B34"),
+    ("9","#003E6F"),
+    ("10","#2DC0C8"),
+)
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
@@ -52,7 +55,7 @@ class Order:
     state = "ODR"
     template = "std"
     orientation = "horizontal"
-    color = "#333333"
+    color = "#665533"
     shipping_name = ""
     shipping_street = ""
     shipping_number = ""
@@ -88,9 +91,11 @@ class Order:
 
     def createpuzzle(self,bc):
         dimensions = (100,100,100,100)
+        trafos = {}
         for t in PUZZLETYPES:
             if t[0]==self.puzzle_type:
                 dimensions = t[2]
+                trafos = t[3]
         puzzle = ""
         puzzleio = StringIO.StringIO()
         coverio = StringIO.StringIO()
@@ -107,7 +112,7 @@ class Order:
         c.save()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
         bcimg = barcode.createBarcodeDrawing("EAN13",value=bc)
-        rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg)
+        templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
         c.showPage()
         c.save()
         return (puzzleio.getvalue(),coverio.getvalue())
