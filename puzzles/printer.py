@@ -242,12 +242,14 @@ def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",color="
     order.shipping_country = address["country"]
     order.write(directory=directory)
 
-def demo(d,s3,title,orientation=None,puzzle_type=None):
+def demo(d,s3,title,color=None,orientation=None,puzzle_type=None):
     order = Order()
     order.puzzle_s3 = s3
     order.puzzle_title = title
     order.puzzle_id = "2153432"
     order.order_id = "837642"
+    if color:
+        order.color = color
     if orientation:
         order.orientation = orientation
     if puzzle_type:
