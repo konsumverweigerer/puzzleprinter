@@ -1,5 +1,9 @@
 from puzzlesettings import *
 from django.db import models
+import random,datetime,time
+
+def randid(t):
+    return "%s%d"%(t,random.randint(1,1<<32))
 
 class Order(models.Model):
     STATUS = (
@@ -24,10 +28,10 @@ class Order(models.Model):
         (u"N", u"Not approved"),
         (u"A", u"Approved"),
     )
-    order_id = models.CharField(max_length=64,unique=True,verbose_name="Shopify Order id")
-    order_date = models.DateTimeField("order date")
+    order_id = models.CharField(max_length=64,default=randid("o"),unique=True,verbose_name="Shopify Order id")
+    order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS)
-    shipping_id = models.CharField(max_length=64,unique=True,verbose_name="Shopify Shipping id")
+    shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
     shipping_name = models.CharField(max_length=255)
     shipping_street = models.CharField(max_length=255)
     shipping_number = models.CharField(max_length=255)
@@ -42,7 +46,7 @@ class Order(models.Model):
     printsync = models.CharField(max_length=4,choices=PRINTSYNC,verbose_name="In sync with printer")
     approval = models.CharField(max_length=4,choices=APPROVAL,verbose_name="Approved for printing")
     approval_date = models.DateTimeField("approval date",blank=True)
-    touch_date = models.DateTimeField("touch date",auto_new=True)
+    touch_date = models.DateTimeField("touch date",auto_now=True)
 
 class Puzzle(models.Model):
     TEMPLATES = (
@@ -63,7 +67,7 @@ class Puzzle(models.Model):
         (u"P", u"Processing"),
         (u"F", u"Finished"),
     )
-    puzzle_id = models.CharField(max_length=64,unique=True,verbose_name="Shopify line item")
+    puzzle_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify line item")
     puzzle_type = models.CharField(max_length=64,choices=TYPES)
     puzzle_template = models.CharField(max_length=64,choices=TEMPLATES)
     puzzle_orientation = models.CharField(max_length=64,choices=ORIENTATION)
