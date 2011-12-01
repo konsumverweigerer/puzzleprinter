@@ -5,6 +5,14 @@ import random,datetime,time
 def randid(t):
     return "%s%d"%(t,random.randint(1,1<<32))
 
+def splitaddress(ad):
+    v = re.findall(" [0-9]+",ad)
+    if v:
+        t = ad.find(v[-1])
+        if t>=0:
+            return (ad[:t],ad[(t+1):])
+    return (ad,"")
+
 class Order(models.Model):
     STATUS = (
         (u"N", u"New"),
@@ -30,7 +38,7 @@ class Order(models.Model):
     )
     order_id = models.CharField(max_length=64,default=randid("o"),unique=True,verbose_name="Shopify Order id")
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
-    order_status = models.CharField(max_length=4,choices=STATUS)
+    order_status = models.CharField(max_length=4,choices=STATUS,default="N")
     shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
     shipping_name = models.CharField(max_length=255)
     shipping_street = models.CharField(max_length=255)
@@ -41,11 +49,11 @@ class Order(models.Model):
     shipping_type = models.CharField(max_length=10,blank=True,verbose_name="Delivery Company")
     shipping_status = models.CharField(max_length=4,choices=SHIPPING)
     shipping_tracking = models.CharField(max_length=50,blank=True,verbose_name="Tracking id")
-    shipping_date = models.DateTimeField("shipping date",blank=True)
+    shipping_date = models.DateTimeField("shipping date",blank=True,null=True)
     shopsync = models.CharField(max_length=4,choices=SHOPSYNC,verbose_name="In sync with shop")
     printsync = models.CharField(max_length=4,choices=PRINTSYNC,verbose_name="In sync with printer")
-    approval = models.CharField(max_length=4,choices=APPROVAL,verbose_name="Approved for printing")
-    approval_date = models.DateTimeField("approval date",blank=True)
+    approval = models.CharField(max_length=4,choices=APPROVAL,verbose_name="Approved for printing",default="N")
+    approval_date = models.DateTimeField("approval date",blank=True,null=True)
     touch_date = models.DateTimeField("touch date",auto_now=True)
 
 class Puzzle(models.Model):
@@ -74,7 +82,7 @@ class Puzzle(models.Model):
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
     puzzle_title = models.CharField(max_length=255)
     puzzle_text = models.CharField(max_length=1000,blank=True)
-    printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS)
+    printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
     order = models.ForeignKey(Order)
 
 class Image(models.Model):

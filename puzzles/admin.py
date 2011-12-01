@@ -5,10 +5,11 @@ import datetime,time
 
 class ImageInline(TabularInline):
     model = models.Image
-    extra = 0
+    extra = 1
 
 class PuzzleInline(TabularInline):
     model = models.Puzzle
+    readonly_fields = ["printing_status"]
     fieldsets = (
         (None, {
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
@@ -18,21 +19,20 @@ class PuzzleInline(TabularInline):
             "fields":("printing_status",),
         }),
     )
+    extra = 1
 
 class PuzzleAdmin(admin.ModelAdmin):
-    model = models.Puzzle
     fieldsets = (
         (None, {
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
-            "classes":("collapse",),
         }),
         ("Status", {
             "fields":("printing_status",),
         }),
     )
     inlines = [ ImageInline ]
-    extra = 1
-
+    list_display = ["puzzle_id","puzzle_type","puzzle_title"]
+    ordering = ["puzzle_type","puzzle_title","printing_status"]
 
 def make_approved(modeladmin, request, queryset):
     queryset.update(approval="A")
@@ -40,24 +40,23 @@ def make_approved(modeladmin, request, queryset):
 make_approved.short_description = "Mark selected orders as approved"
 
 class OrderAdmin(admin.ModelAdmin):
-    search_fields = []
+    search_fields = ["shipping_name","order_id"]
     readonly_fields = ["order_id","shipping_id","shopsync","printsync","order_date","touch_date","shipping_date","approval_date"]
-    prepopulated_fields = {}
     fieldsets = (
         (None, {
             "fields":("order_id","shipping_id"),
+        }),
+        ("Timestamps", {
+            "fields":("order_date","shipping_date","approval_date"),
         }),
         ("Address", {
             "classes":("collapse",),
             "fields":("shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
         }),
-        ("Timestamps", {
-            "fields":("order_date","shipping_date","approval_date"),
-        }),
     )
     inlines = [ PuzzleInline ]
     list_display = ["order_id","shipping_name","order_status","approval"]
-    ordering = ["order_date"]
+    ordering = ["order_date","shipping_name"]
     actions = [make_approved]
 
 admin.site.register(models.Order,OrderAdmin)
