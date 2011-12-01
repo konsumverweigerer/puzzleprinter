@@ -44,6 +44,7 @@ class Puzzle(models.Model):
     puzzle_type = models.CharField(max_length=64)
     puzzle_template = models.CharField(max_length=64)
     puzzle_orientation = models.CharField(max_length=64)
+    puzzle_color = models.CharField(max_length=64)
     puzzle_title = models.CharField(max_length=255)
     puzzle_text = models.CharField(max_length=1000)
     printing_status = models.CharField(max_length=1000)
