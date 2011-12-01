@@ -1,4 +1,5 @@
 from puzzlesettings import *
+# -*- coding: utf-8 -*-
 
 import ConfigParser,StringIO
 from puzzles import templates
@@ -252,17 +253,25 @@ def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",color="
     order.shipping_country = address["country"]
     order.write(directory=directory)
 
-def demo(d,s3,title,color=None,orientation=None,puzzle_type=None):
+def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="2153432",puzzleid="837642"):
     order = Order()
     order.puzzle_s3 = s3
     order.puzzle_title = title
-    order.puzzle_id = "2153432"
-    order.order_id = "837642"
+    order.puzzle_id = puzzleid
+    order.order_id = orderid
+    order.shipping_name = "Karl Puzzleprinter"
+    order.shipping_street = "Äußere Musterstraße"
+    order.shipping_number = "3e"
+    order.shipping_zipcode = "93047"
+    order.shipping_city = "Bad Musterstadt"
+    order.shipping_country = "Deutschland"
+    order.shipping_provider = "DHL"
     if color:
         order.color = color
     if orientation:
         order.orientation = orientation
     if puzzle_type:
         order.puzzle_type = puzzle_type
-    return order.write(d)
+    order.write(d)
+    return order.generatebarcode()
 
