@@ -4,6 +4,16 @@ import ConfigParser,StringIO
 from puzzles import templates
 from boto.utils import fetch_file
 import md5,os,ftplib
+from reportlab import rl_config
+rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
+rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
+rl_config.T1SearchPath.insert(0,os.path.join(BASEDIR,"puzzles","templates","font"))
+from reportlab.pdfbase import pdfmetrics
+pdfmetrics.standardFonts=()
+pdfmetrics.findFontAndRegister("NimbusSanL-Regu")
+pdfmetrics.findFontAndRegister("NimbusSanL-ReguItal")
+pdfmetrics.findFontAndRegister("Helvetica")
+pdfmetrics.findFontAndRegister("Helvetica-Oblique")
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
 from reportlab.pdfgen.canvas import Canvas
@@ -11,7 +21,6 @@ from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph,Frame
 from reportlab.lib.utils import ImageReader
 from reportlab.graphics import barcode
-from reportlab.pdfbase import pdfmetrics
 from PIL import Image
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
@@ -97,8 +106,9 @@ class Order:
             c.drawInlineImage(image,0,0,width=dimensions[1]*mm,height=dimensions[0]*mm)
         c.showPage()
         c.save()
+#        pdfmetrics.standardFonts = ()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
-        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc)
+        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName="NimbusSanL-Regu")
         templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
         c.showPage()
         c.save()
