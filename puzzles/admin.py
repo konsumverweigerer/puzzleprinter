@@ -11,26 +11,36 @@ class PuzzleInline(TabularInline):
     model = models.Puzzle
     readonly_fields = ["printing_status"]
     fieldsets = (
-        (None, {
+        (None,{
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
             "classes":("collapse",),
         }),
-        ("Status", {
+        ("Status",{
             "fields":("printing_status",),
         }),
     )
     extra = 1
 
 class PuzzleAdmin(admin.ModelAdmin):
+    class MyModelAdmin(admin.ModelAdmin):
+        def get_urls(self):
+            urls = super(MyModelAdmin,self).get_urls()
+            my_urls = patterns('',
+                (r'^pimages/$',self.admin_site.admin_view(self.rimage)))
+            return my_urls+urls
+
+        def rimage(self,request):
+            pass
+
     fieldsets = (
-        (None, {
+        (None,{
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
         }),
-        ("Status", {
+        ("Status",{
             "fields":("printing_status",),
         }),
     )
-    inlines = [ ImageInline ]
+    inlines = [ImageInline]
     list_display = ["puzzle_id","puzzle_type","puzzle_title"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
 
