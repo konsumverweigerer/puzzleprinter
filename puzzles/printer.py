@@ -32,13 +32,13 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if self._defaults:
             fp.write("[%s]\r\n" % DEFAULTSECT)
             for (key, value) in self._defaults.items():
-                fp.write("%s = %s\r\n" % (key, str(value).replace('\n', '\r\n\t')))
+                fp.write("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t')))
             fp.write("\r\n")
         for section in self._sections:
             fp.write("[%s]\r\n" % section)
             for (key, value) in self._sections[section].items():
                 if key != "__name__":
-                    fp.write("%s = %s\r\n" %
+                    fp.write("%s=%s\r\n" %
                              (key, str(value).replace('\n', '\r\n\t')))
             fp.write("\r\n")
 
@@ -66,9 +66,15 @@ class Order:
 
     def generatebarcode(self):
         if len(PRINTERKN)==2:
-            return PRINTERKN+str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%10000000000)
+            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%10000000000)
+            while len(t)<10:
+                t = "0"+t
+            return PRINTERKN+t
         elif len(PRINTERKN)==3:
-            return "0"+PRINTERKN+str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            while len(t)<8:
+                t = "0"+t
+            return "0"+PRINTERKN+t
         return ""
 
     def generatebooktype(self):
