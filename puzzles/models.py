@@ -83,6 +83,9 @@ class Puzzle(models.Model):
     puzzle_title = models.CharField(max_length=255)
     puzzle_text = models.CharField(max_length=1000,blank=True)
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
+    preview = models.ImageField(upload_to='preview',width_field="preview_width",height_field="preview_height",null=True,blank=True)
+    preview_width = models.PositiveIntegerField(null=True,blank=True)
+    preview_height = models.PositiveIntegerField(null=True,blank=True)
     order = models.ForeignKey(Order)
 
 class Image(models.Model):
