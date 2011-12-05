@@ -133,7 +133,7 @@ class Order:
         c.save()
         return (puzzleio.getvalue(),coverio.getvalue())
 
-    def write(self,directory="/tmp/"):
+    def write(self,directory=None):
         if "ODR"!=self.state:
             return
         ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
