@@ -9,7 +9,6 @@ class Command(BaseCommand):
     help = 'Synchronizes all data'
 
     def handle(self, *args, **options):
-	print args
         if len(args)>0:
             if "all" == args[0]:
                 syncall()
