@@ -44,7 +44,9 @@ def addneworders():
                     prod = product[0]
                     opt = product[1]
                     newpuzzle = models.Puzzle(puzzle_id=prod["id"])
-                    newpuzzle.puzzle_type = opt[2]
+                    for t in PUZZLETABLE:
+                        if t[0]==opt[2]:
+                            newpuzzle.puzzle_type = t[1]
                     newpuzzle.puzzle_template = opt[4]
                     newpuzzle.puzzle_orientation = opt[3]
                     newpuzzle.puzzle_color = opt[5]
