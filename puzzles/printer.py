@@ -4,7 +4,7 @@ from puzzlesettings import *
 import ConfigParser,StringIO
 from puzzles import templates
 from boto.utils import fetch_file
-import md5,os,ftplib
+import md5,os,ftplib,sys
 from reportlab import rl_config
 rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
 rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
@@ -23,12 +23,24 @@ from reportlab.platypus import Paragraph,Frame
 from reportlab.lib.utils import ImageReader
 from reportlab.graphics import barcode
 from PIL import Image
+import logging
+import codecs
+
+logger = logging.getLogger(__name__)
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
         return optionstr
-           
-    def write(self, fp):
+
+    def _read(self,fp,filename):
+        t = fp.read()
+        if t.startswith(codecs.BOM_UTF8):
+            t = t[3:]
+        elif t[0]==unicode(codecs.BOM_UTF8,"utf8"):
+            t = t[1:]
+        ConfigParser.SafeConfigParser._read(self,StringIO.StringIO(t),filename)
+
+    def write(self,fp):
         if self._defaults:
             fp.write("[%s]\r\n" % DEFAULTSECT)
             for (key, value) in self._defaults.items():
@@ -66,15 +78,15 @@ class Order:
 
     def generatebarcode(self):
         if len(PRINTERKN)==2:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%10000000000)
-            while len(t)<10:
-                t = "0"+t
-            return PRINTERKN+t
-        elif len(PRINTERKN)==3:
             t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%1000000000)
             while len(t)<9:
                 t = "0"+t
-            return PRINTERKN+t
+            return PRINTERKN+t+"0"
+        elif len(PRINTERKN)==3:
+            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            while len(t)<8:
+                t = "0"+t
+            return PRINTERKN+t+"0"
         return ""
 
     def generatebooktype(self):
@@ -121,7 +133,7 @@ class Order:
         c.save()
         return (puzzleio.getvalue(),coverio.getvalue())
 
-    def write(self,directory=None):
+    def write(self,directory="/tmp/"):
         if "ODR"!=self.state:
             return
         ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
@@ -195,6 +207,8 @@ class Order:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
+        except:
+            logging.warn("could not print "+self.order_id)
         finally:
             if not directory:
                 ftp.quit()
@@ -210,35 +224,45 @@ class Order:
         self.shipping_zipcode = data.get("Book","Delivery0ZipCode")
         self.shipping_city = data.get("Book","Delivery0City")
         self.shipping_country = data.get("Book","Delivery0Country")
-        for sfp in statusfp:
-            status = MyConfigParser()
-            status.readfp(StringIO.StringIO(sfp))
-            self.shipping_status = status.get("BookStates",fn[:-4])
-            self.printing_status = status.get("ShippingInfo",fn[:-4]+"_0")
-            if (not self.printing_status) and (not self.shipping_status):
-                break
+        try:
+            self.printing_status = data.get("Faults","0Text")
+        except:
+            for sfp in statusfp:
+                status = MyConfigParser()
+                status.readfp(StringIO.StringIO(sfp))
+                try:
+                    self.printing_status = status.get("BookStates",fn[:-4])
+                except:
+                    pass
+                try:
+                    self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
+                except:
+                    pass
+                if (not self.printing_status) and (not self.shipping_status):
+                    break
 
     @staticmethod
     def fromFile(fn,data,statusdata):
         o = Order()
-        o.read(StringIO.StringIO(data),StringIO.StringIO(statusdata))
+        o.read(fn,StringIO.StringIO(data),statusdata)
         return o
 
-def readorders(status=['ODR','FLT','WRK','ACC']):
+def readorders(ext=['FLT','ACC']):
     ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
     orders = []
     if not ftp:
         return
     try:
         files = ftp.nlst()
-        statuslist = [x for x in files if x.endsWith(".STA")]
+        statuslist = [x for x in files if x.endswith(".STA")]
         statuslist.sort(reverse=True)
-        statusio = StringIO.StringIO()
         status = []
         for fn in statuslist:
+            statusio = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:statusio.write(x))
-            status.append(statusio.getvalue())
-        for fn in [x for x in files if x[-3:] in status]:
+            t = statusio.getvalue()
+            status.append(t)
+        for fn in [x for x in files if x[-3:] in ext]:
             v = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:v.write(x))
             orders.append(Order.fromFile(fn,v.getvalue(),status))
