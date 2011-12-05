@@ -194,7 +194,7 @@ class Order:
             else:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
-#                ftp.rename(tmpname,filename)
+                ftp.rename(tmpname,filename)
         finally:
             if not directory:
                 ftp.quit()
