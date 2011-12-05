@@ -71,10 +71,10 @@ class Order:
                 t = "0"+t
             return PRINTERKN+t
         elif len(PRINTERKN)==3:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
-            while len(t)<8:
+            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%1000000000)
+            while len(t)<9:
                 t = "0"+t
-            return "0"+PRINTERKN+t
+            return PRINTERKN+t
         return ""
 
     def generatebooktype(self):
