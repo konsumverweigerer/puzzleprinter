@@ -1,6 +1,7 @@
 from puzzlesettings import *
+
 from django.db import models
-import random,datetime,time
+import random,datetime,time,re
 
 def randid(t):
     return "%s%d"%(t,random.randint(1,1<<32))
@@ -47,7 +48,7 @@ class Order(models.Model):
     shipping_city = models.CharField(max_length=255)
     shipping_country = models.CharField(max_length=255)
     shipping_type = models.CharField(max_length=10,blank=True,verbose_name="Delivery Company")
-    shipping_status = models.CharField(max_length=4,choices=SHIPPING)
+    shipping_status = models.CharField(max_length=4,choices=SHIPPING,default="N")
     shipping_tracking = models.CharField(max_length=50,blank=True,verbose_name="Tracking id")
     shipping_date = models.DateTimeField("shipping date",blank=True,null=True)
     shopsync = models.CharField(max_length=4,choices=SHOPSYNC,verbose_name="In sync with shop")
@@ -80,7 +81,7 @@ class Puzzle(models.Model):
     puzzle_template = models.CharField(max_length=64,choices=TEMPLATES)
     puzzle_orientation = models.CharField(max_length=64,choices=ORIENTATION)
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
-    puzzle_title = models.CharField(max_length=255)
+    puzzle_title = models.CharField(max_length=256)
     puzzle_text = models.CharField(max_length=1000,blank=True)
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
     preview = models.ImageField(upload_to='preview',width_field="preview_width",height_field="preview_height",null=True,blank=True)
