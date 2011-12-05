@@ -64,7 +64,7 @@ t200files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
 t1000files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
 
 def colordark(color):
-    if colors.colorDistance(HexColor(color),HexColor("#000000"))<0.7:
+    if colors.colorDistance(HexColor(color),HexColor("#000000"))<1.25:
         return True
     return False
 
@@ -176,7 +176,7 @@ def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,h
 #    pdfmetrics.findFontAndRegister("Helvetica-Oblique").face.addObjects(canvas._doc)
     args = [puzzletype,templatedir,canvas,orientation,color,image,title,barcode,0,0]
     template = templates[template+"_"+puzzletype+"_light"]
-    if color in ["#000000"]:
+    if colordark(color):
         template = templates[template+"_"+puzzletype+"_dark"]
     runtemplate(template,trafos,canvas,args,width,height)
 

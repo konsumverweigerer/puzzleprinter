@@ -10,11 +10,11 @@ rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
 rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
 rl_config.T1SearchPath.insert(0,os.path.join(BASEDIR,"puzzles","templates","font"))
 from reportlab.pdfbase import pdfmetrics
-pdfmetrics.standardFonts=()
+pdfmetrics.standardFonts = ()
 pdfmetrics.findFontAndRegister("NimbusSanL-Regu")
 pdfmetrics.findFontAndRegister("NimbusSanL-ReguItal")
-pdfmetrics.findFontAndRegister("Helvetica")
-pdfmetrics.findFontAndRegister("Helvetica-Oblique")
+#pdfmetrics.findFontAndRegister("Helvetica")
+#pdfmetrics.findFontAndRegister("Helvetica-Oblique")
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
 from reportlab.pdfgen.canvas import Canvas
