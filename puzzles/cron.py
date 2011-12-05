@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class Synchronize(Job):
-    run_every = 3
+    run_every = 20
                                                                     
     def job(self):
         logger.error("run job")

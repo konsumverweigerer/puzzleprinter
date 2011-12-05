@@ -9,5 +9,10 @@ class Command(BaseCommand):
     help = 'Synchronizes all data'
 
     def handle(self, *args, **options):
-        pass
+        if len(args)>0:
+            if "all" == args[0]:
+                syncall()
+            elif "orders" == args[0]:
+                addneworders()
+
 
