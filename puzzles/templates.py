@@ -175,9 +175,10 @@ def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,h
 #    pdfmetrics.findFontAndRegister("Helvetica").face.addObjects(canvas._doc)
 #    pdfmetrics.findFontAndRegister("Helvetica-Oblique").face.addObjects(canvas._doc)
     args = [puzzletype,templatedir,canvas,orientation,color,image,title,barcode,0,0]
-    template = templates[template+"_"+puzzletype+"_light"]
     if colordark(color):
         template = templates[template+"_"+puzzletype+"_dark"]
+    else:
+        template = templates[template+"_"+puzzletype+"_light"]
     runtemplate(template,trafos,canvas,args,width,height)
 
 
