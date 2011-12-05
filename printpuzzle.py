@@ -18,7 +18,10 @@ for t in options[0]:
     if t[0]=="-p":
         puzzleid = t[1]
     if t[0]=="-d":
-        directory = t[1]
+        if "ftp" == t[1]:
+            directory = None
+        else:
+            directory = t[1]
     if t[0]=="-s":
         puzzlesize = t[1]
     if t[0]=="--image":

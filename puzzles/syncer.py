@@ -1,5 +1,11 @@
 from puzzlesettings import *
-import models, printer, shop, logging
+import models,printer,shop,logging
+
+def lock(name):
+    pass
+
+def unlock(name):
+    Lock.objects.filter(lock_name=name).update(lock_status="U")
 
 def syncall():
     addneworders()
