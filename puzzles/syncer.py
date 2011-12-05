@@ -16,7 +16,7 @@ def unlock(name):
 
 def syncall():
     addneworders()
-#    addnewprints()
+    addnewprints()
 #    addprintstatus()
 #    addfulfillments()
 
@@ -116,7 +116,7 @@ def addprintstatus():
     if not lock("printstatus"):
         return
     try:
-        pass
+        orders = printer.readorders()
     finally:
         unlock("printstatus")
 
