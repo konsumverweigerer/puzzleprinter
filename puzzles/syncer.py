@@ -67,14 +67,14 @@ def addnewprints():
     try:
         orders = models.Order.objects.filter(printsync="N",approval="A")
         for order in orders:
-            for puzzle in order.puzzles:
+            for puzzle in models.Puzzle.objects.filter(order=order):
                 s3 = None
-                for image in puzzle.images:
+                for image in models.Image.objects.filter(puzzle=puzzle):
                     if image.image_type=="P":
-                        s3 = image_s3
+                        s3 = image.image_s3
                 if s3:
                     p = printer.Order()
-                    p.puzzle_s3 = s3
+                    p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
                     p.puzzle_title = puzzle.puzzle_title
                     p.puzzle_id = puzzle.puzzle_id
                     p.order_id = order.order_id
