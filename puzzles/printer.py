@@ -66,15 +66,15 @@ class Order:
 
     def generatebarcode(self):
         if len(PRINTERKN)==2:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%10000000000)
-            while len(t)<10:
-                t = "0"+t
-            return PRINTERKN+t
-        elif len(PRINTERKN)==3:
             t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%1000000000)
             while len(t)<9:
                 t = "0"+t
-            return PRINTERKN+t
+            return PRINTERKN+t+"0"
+        elif len(PRINTERKN)==3:
+            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            while len(t)<8:
+                t = "0"+t
+            return PRINTERKN+t+"0"
         return ""
 
     def generatebooktype(self):
@@ -121,7 +121,7 @@ class Order:
         c.save()
         return (puzzleio.getvalue(),coverio.getvalue())
 
-    def write(self,directory=None):
+    def write(self,directory="/tmp/"):
         if "ODR"!=self.state:
             return
         ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
@@ -194,7 +194,7 @@ class Order:
             else:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
-                ftp.rename(tmpname,filename)
+#                ftp.rename(tmpname,filename)
         finally:
             if not directory:
                 ftp.quit()

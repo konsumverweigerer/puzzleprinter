@@ -65,7 +65,48 @@ def addnewprints():
     if not lock("newprints"):
         return
     try:
-        pass
+        orders = models.Order.objects.filter(printsync="N",approval="A")
+        for order in orders:
+            for puzzle in order.puzzles:
+                s3 = None
+                for image in puzzle.images:
+                    if image.image_type=="P":
+                        s3 = image_s3
+                if s3:
+                    p = printer.Order()
+                    p.puzzle_s3 = s3
+                    p.puzzle_title = puzzle.puzzle_title
+                    p.puzzle_id = puzzle.puzzle_id
+                    p.order_id = order.order_id
+                    p.shipping_name = order.shipping_name
+                    p.shipping_street = order.shipping_street
+                    p.shipping_number = order.shipping_number
+                    p.shipping_zipcode = order.shipping_zipcode
+                    p.shipping_city = order.shipping_city
+                    p.shipping_country = order.shipping_country
+                    p.shipping_provider = order.shipping_type
+                    for t in COLORTABLE:
+                        if puzzle.puzzle_color==t[0]:
+                            p.color = t[1]
+                            break
+                    for t in ORIENTATIONTABLE:
+                        if puzzle.puzzle_orientation==t[0]:
+                            p.orientation = t[1]
+                            break
+                    for t in PUZZLETABLE:
+                        if puzzle.puzzle_type==t[0]:
+                            p.puzzle_type = t[1]
+                            break
+                    for t in TEMPLATETABLE:
+                        if puzzle.puzzle_template==t[0]:
+                            p.template = t[1]
+                            break
+                    p.write()
+                    puzzle.printing_status = "P"
+                    puzzle.save()
+            order.printsync = "S"
+            order.order_status = "P"
+            order.save()
     finally:
         unlock("newprints")
 
