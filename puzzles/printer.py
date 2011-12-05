@@ -140,8 +140,10 @@ class Order:
                 except:
                     pass
             else:
-                if not os.path.exists(dirname):
+                try:
                     ftp.mkd(basename)
+                except:
+                    pass
             (puzzle,cover) = self.createpuzzle(basename)
 
             if directory:

@@ -99,3 +99,11 @@ class Image(models.Model):
     image_s3 = models.CharField(max_length=255,unique=True)
     puzzle = models.ForeignKey(Puzzle)
 
+class Lock(models.Model):
+    LOCKTYPE = (
+        (u"U", u"Unlocked"),
+        (u"L", u"Locked"),
+    )
+    lock_name = models.CharField(max_length=64)
+    lock_status = models.CharField(max_length=4,choices=LOCKTYPE,default="U")
+
