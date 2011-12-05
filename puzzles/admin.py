@@ -9,10 +9,10 @@ class ImageInline(TabularInline):
 
 class PuzzleInline(TabularInline):
     model = models.Puzzle
-    readonly_fields = ["printing_status"]
+    readonly_fields = ["printing_status","puzzle_id","preview"]
     fieldsets = (
         (None,{
-            "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
+            "fields":("preview","puzzle_type","puzzle_color","puzzle_title"),
             "classes":("collapse",),
         }),
         ("Status",{
@@ -32,6 +32,7 @@ class PuzzleAdmin(admin.ModelAdmin):
         def rimage(self,request):
             pass
 
+    readonly_fields = ["puzzle_id","preview"]
     fieldsets = (
         (None,{
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
@@ -39,10 +40,14 @@ class PuzzleAdmin(admin.ModelAdmin):
         ("Status",{
             "fields":("printing_status",),
         }),
+        ("Preview",{
+            "fields":("preview",),
+        }),
     )
     inlines = [ImageInline]
     list_display = ["puzzle_id","puzzle_type","puzzle_title"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
+    list_filter = ["puzzle_type","puzzle_template","printing_status"]
 
 def make_approved(modeladmin, request, queryset):
     queryset.update(approval="A")
@@ -50,6 +55,7 @@ def make_approved(modeladmin, request, queryset):
 make_approved.short_description = "Mark selected orders as approved"
 
 def make_closed(modeladmin, request, queryset):
+    queryset.update(order_status="F",shopsync="S",printsync="S")
     for order in queryset:
         shop.endFullfillment(order.order_id)
 make_closed.short_description = "Close selected orders"
