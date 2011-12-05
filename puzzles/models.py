@@ -12,6 +12,11 @@ def splitaddress(ad):
         t = ad.find(v[-1])
         if t>=0:
             return (ad[:t],ad[(t+1):])
+    v = re.findall("[0-9]+",ad)
+    if v:
+        t = ad.find(v[-1])
+        if t>=0:
+            return (ad[:t],ad[(t):])
     return (ad,"")
 
 class Order(models.Model):
