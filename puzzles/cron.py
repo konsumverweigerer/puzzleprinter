@@ -9,6 +9,7 @@ class Synchronize(Job):
                                                                     
     def job(self):
         logger.error("run job")
+        syncer.syncall()
 
 cronScheduler.register(Synchronize)
 
