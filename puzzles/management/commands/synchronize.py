@@ -14,5 +14,7 @@ class Command(BaseCommand):
                 syncall()
             elif "orders" == args[0]:
                 addneworders()
+            elif "prints" == args[0]:
+                addnewprints()
 
 
