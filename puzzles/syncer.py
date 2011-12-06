@@ -144,7 +144,7 @@ def addprintstatus():
             order = models.Order.objects.get(order_id=p.order_id)
             puzzles = models.Puzzle.objects.filter(order=order)
             for puzzle in puzzles:
-                bc = p.generatebarcode(order.order_id,puzzle.puzzle_id)
+                bc = p.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
                     if p.finished() and puzzle.printing_status!="F":
                         puzzle.printing_status = "F"
