@@ -44,6 +44,10 @@ def addneworders():
                 neworder.shopsync = "S" 
                 neworder.printsync = "N" 
                 neworder.save()
+                order.attributes["note_attributes"] = {
+                    "invoiceid": neworder[id],
+                }
+                order.save()
                 for product in order[2]:
                     prod = product[0]
                     opt = product[1]
