@@ -1,5 +1,9 @@
 from puzzlesettings import *
-import models,printer,shop,logging
+
+import models,printer,shop
+
+import logging
+from django.core.files.base import ContentFile
 
 def lock(name):
     if len(models.Lock.objects.filter(lock_name=name,lock_status="L"))>0:
@@ -63,52 +67,71 @@ def addneworders():
     finally:
         unlock("neworders")
 
+def printorders(orders):
+    if not lock("newprints"):
+        return
+    try:
+        for order in orders:
+            printorder(order)
+    finally:
+        unlock("newprints")
+
+def printorder(order,force=False):
+    if not order:
+        return
+    if not force:
+        if order.printsync!="N" or approval!="A":
+            return
+    for puzzle in models.Puzzle.objects.filter(order=order):
+        s3 = None
+        for image in models.Image.objects.filter(puzzle=puzzle):
+            if image.image_type=="P":
+                s3 = image.image_s3
+        if s3:
+            p = printer.Order()
+            p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
+            p.puzzle_title = puzzle.puzzle_title
+            p.puzzle_id = puzzle.puzzle_id
+            p.order_id = order.order_id
+            p.shipping_name = order.shipping_name
+            p.shipping_street = order.shipping_street
+            p.shipping_number = order.shipping_number
+            p.shipping_zipcode = order.shipping_zipcode
+            p.shipping_city = order.shipping_city
+            p.shipping_country = order.shipping_country
+            p.shipping_provider = order.shipping_type
+            for t in COLORTABLE:
+                if puzzle.puzzle_color==t[0]:
+                    p.color = t[1]
+                    break
+            for t in ORIENTATIONTABLE:
+                if puzzle.puzzle_orientation==t[0]:
+                    p.orientation = t[1]
+                    break
+            for t in PUZZLETABLE:
+                if puzzle.puzzle_type==t[0]:
+                    p.puzzle_type = t[1]
+                    break
+            for t in TEMPLATETABLE:
+                if puzzle.puzzle_template==t[0]:
+                    p.template = t[1]
+                    break
+            p.write()
+            if p.preview:
+                puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+            puzzle.printing_status = "P"
+            puzzle.save()
+    order.printsync = "S"
+    order.order_status = "P"
+    order.save()
+
 def addnewprints():
     if not lock("newprints"):
         return
     try:
         orders = models.Order.objects.filter(printsync="N",approval="A")
         for order in orders:
-            for puzzle in models.Puzzle.objects.filter(order=order):
-                s3 = None
-                for image in models.Image.objects.filter(puzzle=puzzle):
-                    if image.image_type=="P":
-                        s3 = image.image_s3
-                if s3:
-                    p = printer.Order()
-                    p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
-                    p.puzzle_title = puzzle.puzzle_title
-                    p.puzzle_id = puzzle.puzzle_id
-                    p.order_id = order.order_id
-                    p.shipping_name = order.shipping_name
-                    p.shipping_street = order.shipping_street
-                    p.shipping_number = order.shipping_number
-                    p.shipping_zipcode = order.shipping_zipcode
-                    p.shipping_city = order.shipping_city
-                    p.shipping_country = order.shipping_country
-                    p.shipping_provider = order.shipping_type
-                    for t in COLORTABLE:
-                        if puzzle.puzzle_color==t[0]:
-                            p.color = t[1]
-                            break
-                    for t in ORIENTATIONTABLE:
-                        if puzzle.puzzle_orientation==t[0]:
-                            p.orientation = t[1]
-                            break
-                    for t in PUZZLETABLE:
-                        if puzzle.puzzle_type==t[0]:
-                            p.puzzle_type = t[1]
-                            break
-                    for t in TEMPLATETABLE:
-                        if puzzle.puzzle_template==t[0]:
-                            p.template = t[1]
-                            break
-                    p.write()
-                    puzzle.printing_status = "P"
-                    puzzle.save()
-            order.printsync = "S"
-            order.order_status = "P"
-            order.save()
+            printorder(order)
     finally:
         unlock("newprints")
 
