@@ -71,6 +71,10 @@ def details(orderid,order=None):
     return (order["id"],order,products,shipping)
 
 def startFullfillment(orderid):
+    order = Order.find(int(orderid))
+    fs = order.attributes["fulfillments"]
+    if len(fs)>0:
+        return fs[0]
     f = Fulfillment(dict(order_id=orderid))
     f.save()
     return f
@@ -85,6 +89,9 @@ def updateFullfillment(orderid,tracking_company=None,tracking_number=None,status
             fulfillment["tracking_number"] = tracking_number
             fulfillment.save()
         return fulfillment
+    else:
+        startFullfillment(orderid)
+        return updateFullfillment(orderid,tracking_company=tracking_company,tracking_number=tracking_number,status=status)
     return None
 
 def endFullfillment(orderid,status=None):
