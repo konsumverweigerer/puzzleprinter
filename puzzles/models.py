@@ -61,7 +61,7 @@ class Order(models.Model):
     approval = models.CharField(max_length=4,choices=APPROVAL,verbose_name="Approved for printing",default="N")
     approval_date = models.DateTimeField("approval date",blank=True,null=True)
     touch_date = models.DateTimeField("touch date",auto_now=True)
-    total_lineitems = models.DecimalField(max_digits=12,decimal_places=2,null=True,verbose_name="Lineitem total")
+    total_lineitems = models.DecimalField(max_digits=12,decimal_places=2,default=0,null=True,verbose_name="Lineitem total")
 
 class Puzzle(models.Model):
     TEMPLATES = (
