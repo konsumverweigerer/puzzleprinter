@@ -18,5 +18,6 @@ class Command(BaseCommand):
                 addnewprints()
             elif "status" == args[0]:
                 addprintstatus()
-
+            elif "fulfillment" == args[0]:
+                addfulfillments()
 

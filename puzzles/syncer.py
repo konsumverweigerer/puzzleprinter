@@ -22,7 +22,7 @@ def syncall():
     addneworders()
     addnewprints()
     addprintstatus()
-#    addfulfillments()
+    addfulfillments()
 
 def addneworders():
     if not lock("neworders"):
@@ -146,7 +146,7 @@ def addprintstatus():
                 puzzles = models.Puzzle.objects.filter(order=order)
             except:
                 print "could not find order with "+p.order_id
-                break
+                continue
             for puzzle in puzzles:
                 bc = p.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
@@ -158,6 +158,8 @@ def addprintstatus():
                         order.shopsync = "N"
                     if p.shipping_status and order.shipping_status=="N":
                         order.shipping_status = "S"
+                        #TODO: parse
+                        order.shipping_type = p.shipping_status
                         order.shipping_tracking = p.shipping_status
                         order.shopsync = "N"
                         puzzle.save()
@@ -169,6 +171,18 @@ def addfulfillments():
     if not lock("fulfillments"):
         return
     try:
-        pass
+        orders = models.Order.objects.filter(shopsync="N")
+        for order in orders:
+            if order.shipping_status=="S":
+                shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
+                order.order_status = "F"
+            else:
+                puzzles = models.Puzzle.objects.filter(order=order)
+                for puzzle in puzzles:
+                    if puzzle.printing_status=="F" or puzzle.printing_status=="P":
+                        shop.startFullfillment(order.order_id)
+                        break
+            order.shopsync = "S"
+            order.save()
     finally:
         unlock("fulfillments")
