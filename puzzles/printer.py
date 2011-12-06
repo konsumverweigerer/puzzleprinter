@@ -28,6 +28,10 @@ from reportlab.graphics import barcode
 
 logger = logging.getLogger(__name__)
 
+AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Delivered")
+ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
+FINISHEDSTATUS = ("CheckedOut","Delivered")
+
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
         return optionstr
@@ -76,15 +80,34 @@ class Order:
     printing_status = None
     shipping_status = None
     preview = None
+    barcode = None
+
+    def finished(self):
+        if printing_status:
+            for t in FINISHEDSTATUS:
+                if printing_status.startswith(t):
+                    return True
+        return False
+
+    def valid(self):
+        if printing_status:
+            for t in ACCEPTEDSTATUS:
+                if printing_status.startswith(t):
+                    return True
+        return False
 
     def generatebarcode(self):
+        self.barcode = generatebarcode(self,seld.order_id,self.puzzle_id)
+        return self.barcode
+
+    def generatebarcode(self,order_id,puzzle_id):
         if len(PRINTERKN)==2:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%1000000000)
+            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%1000000000)
             while len(t)<9:
                 t = "0"+t
             return PRINTERKN+t+"0"
         elif len(PRINTERKN)==3:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
             while len(t)<8:
                 t = "0"+t
             return PRINTERKN+t+"0"
@@ -257,6 +280,7 @@ class Order:
     def fromFile(fn,data,statusdata):
         o = Order()
         o.read(fn,StringIO.StringIO(data),statusdata)
+        o.barcode = fn[0:-4]
         return o
 
 def readorders(ext=['FLT','ACC']):

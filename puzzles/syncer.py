@@ -139,7 +139,25 @@ def addprintstatus():
     if not lock("printstatus"):
         return
     try:
-        orders = printer.readorders()
+        prints = printer.readorders()
+        for p in prints:
+            order = models.Order.objects.get(order_id=p.order_id)
+            puzzles = models.Puzzle.objects.filter(order=order)
+            for puzzle in puzzles:
+                bc = p.generatebarcode(order.order_id,puzzle.puzzle_id)
+                if bc==p.barcode:
+                    if p.finished() and puzzle.printing_status!="F":
+                        puzzle.printing_status = "F"
+                        order.shopsync = "N"
+                    elif p.valid() and puzzle.printing_status=="N":
+                        puzzle.printing_status = "P"
+                        order.shopsync = "N"
+                    if p.shipping_status and order.shipping_status=="N":
+                        order.shipping_status = "S"
+                        order.shipping_tracking = p.shipping_status
+                        order.shopsync = "N"
+                        puzzle.save()
+                        order.save()
     finally:
         unlock("printstatus")
 
