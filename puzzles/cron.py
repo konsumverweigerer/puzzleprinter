@@ -1,5 +1,7 @@
-from django_cron import cronScheduler, Job
-from puzzles.models import *
+from django_cron import cronScheduler,Job
+
+import syncer
+
 import logging,random
 
 logger = logging.getLogger(__name__)
@@ -9,7 +11,7 @@ class Synchronize(Job):
                                                                     
     def job(self):
         t = random.randint(0,100000)
-        logger.error("runnig job: "+t)
+        logger.error("running job: "+t)
         syncer.syncall()
         logger.error("run job: "+t)
 

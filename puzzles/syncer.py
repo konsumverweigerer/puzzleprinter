@@ -1,5 +1,8 @@
 from puzzlesettings import *
-import models,printer,shop,logging
+
+import models,printer,shop
+
+import logging
 from django.core.files.base import ContentFile
 
 def lock(name):

@@ -105,7 +105,7 @@ class Order:
             return self.puzzle_data
         return None
 
-    def createpreview(puzzle,cover):
+    def createpreview(self,puzzle,cover):
         blob = pgmagick.Blob(cover)
         img = pgmagick.Image(blob,pgmagick.Geometry(600,480))
         img.scale('640x480')
@@ -219,8 +219,8 @@ class Order:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
-        except:
-            logging.warn("could not print "+self.order_id)
+#        except:
+#            logging.warn("could not print "+self.order_id)
         finally:
             if not directory:
                 ftp.quit()
