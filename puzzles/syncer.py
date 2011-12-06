@@ -141,8 +141,12 @@ def addprintstatus():
     try:
         prints = printer.readorders()
         for p in prints:
-            order = models.Order.objects.get(order_id=p.order_id)
-            puzzles = models.Puzzle.objects.filter(order=order)
+            try:
+                order = models.Order.objects.get(order_id=p.order_id)
+                puzzles = models.Puzzle.objects.filter(order=order)
+            except:
+                print "could not find order with "+p.order_id
+                break
             for puzzle in puzzles:
                 bc = p.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
