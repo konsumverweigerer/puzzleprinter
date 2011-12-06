@@ -28,6 +28,10 @@ from reportlab.graphics import barcode
 
 logger = logging.getLogger(__name__)
 
+AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Delivered")
+ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
+FINISHEDSTATUS = ("CheckedOut","Delivered")
+
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
         return optionstr
@@ -54,6 +58,15 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
                              (key, str(value).replace('\n', '\r\n\t')))
             fp.write("\r\n")
 
+def send_file(uri,content,username=None,password=None):
+    bucket_name, key_name = uri[len('s3://'):].split('/', 1)
+    c = boto.connect_s3(aws_access_key_id=username, aws_secret_access_key=password)
+    bucket = c.get_bucket(bucket_name)
+    key = bucket.get_key(key_name)
+    if not key:
+        key = bucket.new_key(key_name)
+    key.set_contents_from_string(content)
+
 class Order:
     order_id = ""
     puzzle_id = ""
@@ -76,19 +89,38 @@ class Order:
     printing_status = None
     shipping_status = None
     preview = None
+    barcode = None
 
-    def generatebarcode(self):
+    def finished(self):
+        if printing_status:
+            for t in FINISHEDSTATUS:
+                if printing_status.startswith(t):
+                    return True
+        return False
+
+    def valid(self):
+        if printing_status:
+            for t in ACCEPTEDSTATUS:
+                if printing_status.startswith(t):
+                    return True
+        return False
+
+    def makebarcode(self,order_id,puzzle_id):
         if len(PRINTERKN)==2:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%1000000000)
+            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%1000000000)
             while len(t)<9:
                 t = "0"+t
             return PRINTERKN+t+"0"
         elif len(PRINTERKN)==3:
-            t = str(int(md5.md5(str(self.order_id)+str(self.puzzle_id)).hexdigest(),16)%100000000)
+            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
             while len(t)<8:
                 t = "0"+t
             return PRINTERKN+t+"0"
         return ""
+
+    def generatebarcode(self):
+        self.barcode = self.makebarcode(self.order_id,self.puzzle_id)
+        return self.barcode
 
     def generatebooktype(self):
         for t in PUZZLETYPES:
@@ -104,6 +136,11 @@ class Order:
             self.puzzle_data = f.read()
             return self.puzzle_data
         return None
+
+    def putfile(self,path,content):
+        if path:
+            s3 = "s3://"+AWSBUCKET+AWSARCHIVE+path
+            send_file(s3,content,username=AWSKEYID,password=AWSSECRET)
 
     def createpreview(self,puzzle,cover):
         blob = pgmagick.Blob(cover)
@@ -178,6 +215,8 @@ class Order:
                 ftp.cwd(basename)
                 ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
                 ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
+                putfile(self,basename+"/"+puzzlepdf,puzzle)
+                putfile(self,basename+"/"+coverpdf,cover)
 
             data.add_section("Order")
             data.set("Order","CustomersShortName",PRINTERSN)
@@ -219,8 +258,9 @@ class Order:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
-#        except:
-#            logging.warn("could not print "+self.order_id)
+                putfile(self,filename,dataio.getvalue())
+        except:
+            logging.warn("could not print "+self.order_id)
         finally:
             if not directory:
                 ftp.quit()
@@ -257,6 +297,7 @@ class Order:
     def fromFile(fn,data,statusdata):
         o = Order()
         o.read(fn,StringIO.StringIO(data),statusdata)
+        o.barcode = fn[0:-4]
         return o
 
 def readorders(ext=['FLT','ACC']):
