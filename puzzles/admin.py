@@ -1,4 +1,4 @@
-import models,shop
+import models,shop,syncer
 from django.contrib import admin
 from django.contrib.admin.options import StackedInline, TabularInline
 import datetime,time
@@ -49,16 +49,20 @@ class PuzzleAdmin(admin.ModelAdmin):
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
 
-def make_approved(modeladmin, request, queryset):
+def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
     queryset.update(approval_date = time.strftime("%Y-%m-%d %H:%M:%S"))
 make_approved.short_description = "Mark selected orders as approved"
 
-def make_closed(modeladmin, request, queryset):
+def make_closed(modeladmin,request,queryset):
     queryset.update(order_status="F",shopsync="S",printsync="S")
     for order in queryset:
         shop.endFullfillment(order.order_id)
 make_closed.short_description = "Close selected orders"
+
+def make_print(modeladmin,request,queryset):
+    syncer.printorders(queryset)
+make_print.short_description = "Print selected orders"
 
 class OrderAdmin(admin.ModelAdmin):
     search_fields = ["shipping_name","order_id"]
@@ -79,7 +83,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ["order_id","shipping_name","order_status","approval"]
     ordering = ["order_date","shipping_name"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
-    actions = [make_approved,make_closed]
+    actions = [make_approved,make_closed,make_print]
 
 admin.site.register(models.Order,OrderAdmin)
 admin.site.register(models.Puzzle,PuzzleAdmin)

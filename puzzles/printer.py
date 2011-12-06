@@ -1,10 +1,15 @@
 from puzzlesettings import *
 # -*- coding: utf-8 -*-
 
-import ConfigParser,StringIO
 from puzzles import templates
+
+import ConfigParser,StringIO,tempfile
+import md5,os,ftplib,sys,logging,codecs,pgmagick
+
 from boto.utils import fetch_file
-import md5,os,ftplib,sys
+
+from PIL import Image
+
 from reportlab import rl_config
 rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
 rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
@@ -17,14 +22,9 @@ pdfmetrics.findFontAndRegister("NimbusSanL-ReguItal")
 #pdfmetrics.findFontAndRegister("Helvetica-Oblique")
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
-from reportlab.pdfgen.canvas import Canvas
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.platypus import Paragraph,Frame
 from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen.canvas import Canvas
 from reportlab.graphics import barcode
-from PIL import Image
-import logging
-import codecs
 
 logger = logging.getLogger(__name__)
 
@@ -75,6 +75,7 @@ class Order:
     additionaldata = None
     printing_status = None
     shipping_status = None
+    preview = None
 
     def generatebarcode(self):
         if len(PRINTERKN)==2:
@@ -103,6 +104,16 @@ class Order:
             self.puzzle_data = f.read()
             return self.puzzle_data
         return None
+
+    def createpreview(puzzle,cover):
+        blob = pgmagick.Blob(cover)
+        img = pgmagick.Image(blob,pgmagick.Geometry(600,480))
+        img.scale('640x480')
+        (fd,n) = tempfile.mkstemp(suffix=".jpg")
+        img.write(n)
+        t = open(n).read()
+        os.remove(n)
+        return t
 
     def createpuzzle(self,bc):
         dimensions = (100,100,100,100)
@@ -157,6 +168,7 @@ class Order:
                 except:
                     pass
             (puzzle,cover) = self.createpuzzle(basename)
+            self.preview = self.createpreview(puzzle,cover)
 
             if directory:
                 open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
