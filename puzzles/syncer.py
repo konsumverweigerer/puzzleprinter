@@ -21,7 +21,7 @@ def unlock(name):
 def syncall():
     addneworders()
     addnewprints()
-#    addprintstatus()
+    addprintstatus()
 #    addfulfillments()
 
 def addneworders():

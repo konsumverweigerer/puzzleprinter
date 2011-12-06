@@ -16,5 +16,7 @@ class Command(BaseCommand):
                 addneworders()
             elif "prints" == args[0]:
                 addnewprints()
+            elif "status" == args[0]:
+                addprintstatus()
 
 
