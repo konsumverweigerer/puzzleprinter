@@ -46,7 +46,7 @@ def addneworders():
                 neworder.total_lineitems = order[1]["total_price"]
                 neworder.save()
                 order[4].attributes["note_attributes"] = {
-                    "invoiceid": neworder[id],
+                    "invoiceid": neworder.id,
                 }
                 order[4].save()
                 for product in order[2]:
