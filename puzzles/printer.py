@@ -92,16 +92,16 @@ class Order:
     barcode = None
 
     def finished(self):
-        if printing_status:
+        if self.printing_status:
             for t in FINISHEDSTATUS:
-                if printing_status.startswith(t):
+                if self.printing_status.startswith(t):
                     return True
         return False
 
     def valid(self):
-        if printing_status:
+        if self.printing_status:
             for t in ACCEPTEDSTATUS:
-                if printing_status.startswith(t):
+                if self.printing_status.startswith(t):
                     return True
         return False
 

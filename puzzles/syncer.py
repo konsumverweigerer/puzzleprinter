@@ -215,8 +215,8 @@ def addprintstatus():
                         order.shipping_type = p.shipping_status
                         order.shipping_tracking = p.shipping_status
                         order.shopsync = "N"
-                        puzzle.save()
-                        order.save()
+                    puzzle.save()
+                    order.save()
     finally:
         unlock("printstatus")
 
