@@ -45,10 +45,6 @@ def addneworders():
                 neworder.printsync = "N" 
                 neworder.total_lineitems = order[1]["total_price"]
                 neworder.save()
-                order[4].attributes["note_attributes"] = {
-                    "invoiceid": neworder.id,
-                }
-                order[4].save()
                 for product in order[2]:
                     prod = product[0]
                     opt = product[1]
@@ -69,6 +65,11 @@ def addneworders():
                     newimage.image_s3 = opt[6]
                     newimage.puzzle = newpuzzle
                     newimage.save()
+                order[4].attributes["note_attributes"] = {
+                    "invoiceid": neworder.id,
+                }
+                print order[4].attributes
+                order[4].save()
     finally:
         unlock("neworders")
 
