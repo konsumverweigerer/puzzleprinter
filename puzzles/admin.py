@@ -87,7 +87,6 @@ class OrderAdmin(admin.ModelAdmin):
             "fields":("order_date","shipping_date","approval_date"),
         }),
         ("Address", {
-            "classes":("collapse",),
             "fields":("shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
         }),
     )
