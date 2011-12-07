@@ -127,6 +127,7 @@ def previeworder(order):
                 if puzzle.puzzle_template==t[0]:
                     p.template = t[1]
                     break
+            p.makepreview()
             if p.preview:
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
             puzzle.save()
