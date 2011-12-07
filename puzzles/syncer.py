@@ -49,7 +49,6 @@ def addneworders():
                 neworder.total_lineitems = order[1]["total_price"]
                 neworder.save()
                 print "saved order "+str(neworder.id)
-                print "have "+str(len(order[2]))+" puzzles"
                 for product in order[2]:
                     prod = product[0]
                     opt = product[1]
@@ -76,7 +75,6 @@ def addneworders():
                 order[4].attributes["note_attributes"] = {
                     "invoiceid": neworder.id,
                 }
-                print order[4].attributes
                 order[4].save()
                 sys.setdefaultencoding("ascii")
     finally:
