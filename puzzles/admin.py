@@ -33,19 +33,18 @@ class ImageInline(TabularInline):
     model = models.Image
     extra = 1
 
-class PuzzleInline(TabularInline):
+class PuzzleInline(StackedInline):
     model = models.Puzzle
     readonly_fields = ["printing_status","puzzle_id","preview"]
     fieldsets = (
         (None,{
             "fields":("preview","puzzle_type","puzzle_color","puzzle_title"),
-            "classes":("collapse",),
         }),
         ("Status",{
             "fields":("printing_status",),
         }),
     )
-    extra = 1
+    extra = 0
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }
