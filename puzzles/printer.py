@@ -181,6 +181,13 @@ class Order:
         c.save()
         return (puzzleio.getvalue(),coverio.getvalue())
 
+    def makepreview(self):
+        if "ODR"!=self.state:
+            return
+        basename = self.generatebarcode()
+        (puzzle,cover) = self.createpuzzle(basename)
+        self.preview = self.createpreview(puzzle,cover)
+
     def write(self,directory="/tmp/"):
         if "ODR"!=self.state:
             return
