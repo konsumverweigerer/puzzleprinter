@@ -48,14 +48,14 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if self._defaults:
             fp.write("[%s]\r\n" % DEFAULTSECT)
             for (key, value) in self._defaults.items():
-                fp.write("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t')).encode("utf8"))
+                fp.write(("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t'))).encode("utf8"))
             fp.write("\r\n")
         for section in self._sections:
             fp.write("[%s]\r\n" % section)
             for (key, value) in self._sections[section].items():
                 if key != "__name__":
-                    fp.write("%s=%s\r\n" %
-                             (key, unicode(value).replace('\n', '\r\n\t')).encode("utf8"))
+                    fp.write(("%s=%s\r\n" %
+                             (key, unicode(value).replace('\n', '\r\n\t'))).encode("utf8"))
             fp.write("\r\n")
 
 def send_file(uri,content,username=None,password=None):
@@ -266,8 +266,8 @@ class Order:
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
                 putfile(self,filename,dataio.getvalue())
-        except:
-            logging.warn("could not print "+self.order_id)
+        except Exception,e:
+            logging.warn("could not print "+self.order_id+" "+str(e))
         finally:
             if not directory:
                 ftp.quit()
