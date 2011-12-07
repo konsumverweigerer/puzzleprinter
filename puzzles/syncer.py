@@ -77,7 +77,7 @@ def addneworders():
                 }
                 order[4].save()
                 sys.setdefaultencoding("ascii")
-                previeworder(order)
+                previeworder(order[4])
     finally:
         unlock("neworders")
 
