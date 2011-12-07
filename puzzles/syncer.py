@@ -5,6 +5,9 @@ import models,printer,shop
 import logging
 from django.core.files.base import ContentFile
 
+import sys
+reload(sys)
+
 def lock(name):
     if len(models.Lock.objects.filter(lock_name=name,lock_status="L"))>0:
         return False
@@ -69,11 +72,13 @@ def addneworders():
                     newimage.puzzle = newpuzzle
                     newimage.save()
                     print "saved image "+str(newimage.id)
+                sys.setdefaultencoding("utf8")
                 order[4].attributes["note_attributes"] = {
                     "invoiceid": neworder.id,
                 }
                 print order[4].attributes
                 order[4].save()
+                sys.setdefaultencoding("ascii")
     finally:
         unlock("neworders")
 
