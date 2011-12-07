@@ -46,6 +46,9 @@ class PuzzleInline(TabularInline):
         }),
     )
     extra = 1
+    formfield_overrides = {
+        models.models.ImageField: {"widget": AdminPreviewWidget}
+    }
 
 class PuzzleAdmin(admin.ModelAdmin):
     readonly_fields = ["puzzle_id"]
