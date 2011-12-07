@@ -48,7 +48,6 @@ def addneworders():
                 neworder.printsync = "N" 
                 neworder.total_lineitems = order[1]["total_price"]
                 neworder.save()
-                print "saved order "+str(neworder.id)
                 for product in order[2]:
                     prod = product[0]
                     opt = product[1]
@@ -64,13 +63,11 @@ def addneworders():
                     newpuzzle.printing_status = "N"
                     newpuzzle.order = neworder
                     newpuzzle.save()
-                    print "saved puzzle "+str(newpuzzle.id)
                     newimage = models.Image()
                     newimage.image_type = "P"
                     newimage.image_s3 = opt[6]
                     newimage.puzzle = newpuzzle
                     newimage.save()
-                    print "saved image "+str(newimage.id)
                 sys.setdefaultencoding("utf8")
                 order[4].attributes["note_attributes"] = {
                     "invoiceid": neworder.id,

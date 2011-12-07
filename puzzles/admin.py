@@ -10,16 +10,23 @@ from django.utils.safestring import mark_safe
 logger = logging.getLogger(__name__)
 
 class AdminImageWidget(AdminFileWidget):
-    def render(self, name, value, attrs=None):
+    def render(self,name,value,attrs=None):
         output = []
         if value and getattr(value,"url",None):
             image_url = value.url
             file_name = str(value)
-#            output.append(u' <a href="%s" target="_blank"><img src="%s" alt="%s" /></a> %s ' % \
-#                (image_url,image_url,file_name,_('Change:')))
             output.append(u' <a href="%s" target="_blank"><img src="%s" alt="%s" /></a>' % \
                 (image_url,image_url,file_name))
-#        output.append(super(AdminFileWidget,self).render(name,value,attrs))
+        return mark_safe(u''.join(output))
+
+class AdminPreviewWidget(AdminFileWidget):
+    def render(self,name,value,attrs=None):
+        output = []
+        if value and getattr(value,"url",None):
+            image_url = value.url
+            file_name = str(value)
+            output.append(u' <a href="%s" target="_blank"><img src="%s" alt="%s" width="%d" height="%d"/></a>' % \
+                (image_url,image_url,file_name,120,100))
         return mark_safe(u''.join(output))
 
 class ImageInline(TabularInline):
@@ -95,6 +102,9 @@ class OrderAdmin(admin.ModelAdmin):
     ordering = ["order_date","shipping_name"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
     actions = [make_approved,make_closed,make_print]
+    formfield_overrides = {
+        models.models.ImageField: {"widget": AdminPreviewWidget}
+    }
 
 admin.site.register(models.Order,OrderAdmin)
 admin.site.register(models.Puzzle,PuzzleAdmin)
