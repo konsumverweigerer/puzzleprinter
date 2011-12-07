@@ -35,7 +35,7 @@ class ImageInline(TabularInline):
 
 class PuzzleInline(StackedInline):
     model = models.Puzzle
-    readonly_fields = ["printing_status","puzzle_id","preview"]
+    readonly_fields = ["printing_status","puzzle_id"]
     fieldsets = (
         (None,{
             "fields":("preview","puzzle_type","puzzle_color","puzzle_title"),
