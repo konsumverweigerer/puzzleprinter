@@ -170,7 +170,7 @@ def printorder(order,force=False):
     if not order:
         return
     if not force:
-        if order.printsync!="N" or approval!="A":
+        if order.printsync!="N" or order.approval!="A":
             return
     for puzzle in models.Puzzle.objects.filter(order=order):
         s3 = None
