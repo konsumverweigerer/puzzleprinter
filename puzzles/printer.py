@@ -4,7 +4,7 @@ from puzzlesettings import *
 from puzzles import templates
 
 import ConfigParser,StringIO,tempfile
-import md5,os,ftplib,sys,logging,codecs,pgmagick
+import md5,os,ftplib,sys,logging,codecs,pgmagick,boto
 
 from boto.utils import fetch_file
 
