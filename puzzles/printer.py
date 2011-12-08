@@ -222,8 +222,8 @@ class Order:
                 ftp.cwd(basename)
                 ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
                 ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
-                putfile(self,basename+"/"+puzzlepdf,puzzle)
-                putfile(self,basename+"/"+coverpdf,cover)
+                self.putfile(basename+"/"+puzzlepdf,puzzle)
+                self.putfile(basename+"/"+coverpdf,cover)
 
             data.add_section("Order")
             data.set("Order","CustomersShortName",PRINTERSN)
@@ -265,7 +265,7 @@ class Order:
                 ftp.cwd("/")
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
-                putfile(self,filename,dataio.getvalue())
+                self.putfile(filename,dataio.getvalue())
         except Exception,e:
             logging.warn("could not print "+self.order_id+" "+str(e))
         finally:
