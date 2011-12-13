@@ -33,7 +33,7 @@ def addneworders():
     try:
         since_id = None
         v = models.Order.objects.order_by('-id')[0:1].get() 
-        if len(v)>0:
+        if v:
             since_id = v.order_id
         print "searching orders since: "+str(since_id)
         neworders = shop.openOrders(since_id=since_id)
