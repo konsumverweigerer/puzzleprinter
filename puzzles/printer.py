@@ -257,7 +257,7 @@ class Order:
                     ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(self.additionaldata))
                     self.putfile(basename+"/"+additionalpdf,self.additionaldata)
                 data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
-                data.set("Book","DeliveryXAdditionalDocumentsBackGroundIdentifier","0")
+                data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
             dataio = StringIO.StringIO()
             data.write(dataio)
             if directory:
