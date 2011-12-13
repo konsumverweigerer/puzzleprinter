@@ -53,8 +53,8 @@ ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIF
 #Name des Puzzlebild inklusive Datei Endung. 
 
 
-def openOrders():
-    orders = [(details(0,order=x.to_dict()),x) for x in Order.find(limit=250,financial_status="paid") if x.attributes["fulfillment_status"]==None]
+def openOrders(since_id=None):
+    orders = [(details(0,order=x.to_dict()),x) for x in Order.find(limit=250,financial_status="paid",since_id=since_id) if x.attributes["fulfillment_status"]==None]
     return [(x[0][0],x[0][1],x[0][2],x[0][3],x[1]) for x in orders if len(x[0][2])>0]
 
 def sentOrders():
@@ -85,8 +85,8 @@ def updateFullfillment(orderid,tracking_company=None,tracking_number=None,status
     if len(fs)>0:
         fulfillment = fs[0]
         if fulfillment and (tracking_number or tracking_company):
-            fulfillment["tracking_company"] = tracking_company
-            fulfillment["tracking_number"] = tracking_number
+            fulfillment.attributes["tracking_company"] = tracking_company
+            fulfillment.attributes["tracking_number"] = tracking_number
             fulfillment.save()
         return fulfillment
     else:

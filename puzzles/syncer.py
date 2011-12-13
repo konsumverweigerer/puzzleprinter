@@ -31,7 +31,12 @@ def addneworders():
     if not lock("neworders"):
         return
     try:
-        neworders = shop.openOrders()
+        since_id = None
+        v = models.Order.objects.order_by('-id')[0:1].get() 
+        if len(v)>0:
+            since_id = v.order_id
+        print "searching orders since: "+str(since_id)
+        neworders = shop.openOrders(since_id=since_id)
         for order in neworders:
             if len(models.Order.objects.filter(order_id=order[0]))==0:
                 shipping_address = order[1]["shipping_address"]

@@ -69,6 +69,8 @@ class PuzzleAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminImageWidget}
     }
+    def save_model(self,request,obj,form,change):
+        admin.ModelAdmin.save_model(request,obj,form,change)
 
 def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
