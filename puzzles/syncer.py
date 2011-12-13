@@ -1,12 +1,51 @@
 from puzzlesettings import *
 
-import models,printer,shop
+import models,printer,shop,mechanize
 
-import logging
+import logging,StringIO,os
 from django.core.files.base import ContentFile
+from xhtml2pdf import document
 
 import sys
 reload(sys)
+
+COUNTRYMAP = {
+    "Germany" : "Deutschland",
+}
+
+def readinvoice(orderid=None):
+    if not orderid:
+        return ("","")
+    cj = mechanize.CookieJar()
+    br = mechanize.Browser()
+    br.set_cookiejar(cj)
+    url = "%s%s?shop=%s"%(SHOPINVOICEURL,orderid,SHOPIFYSHOP)
+    br.set_handle_robots(False)
+    br.open(url)
+    form = [x for x in br.forms()][0]
+    form.set_value(SHOPPWD,'password')
+    form.set_value(SHOPLOGIN,'login')
+    br.form = form
+    r = br.submit()
+    t = r.read()
+    hh = mechanize.HTTPHandler()
+    hsh = mechanize.HTTPSHandler()
+    opener = mechanize.build_opener(hh, hsh)
+    mechanize.install_opener(opener)
+    req = mechanize.Request("%s%s?template_id=%s"%(SHOPINVOICEURL,orderid,INVOICEID))
+    req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
+    req.add_header('X-Requested-With','XMLHttpRequest')
+    req.add_header('Referer',url)
+    cj.add_cookie_header(req)
+    res = mechanize.urlopen(req)
+    return (t,res.read())
+
+def renderinvoice(invoice):
+    w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html"))
+    i = StringIO.StringIO(w.read()%(invoice[1],))
+    o = StringIO.StringIO()
+    document.pisaDocument(i,o)
+    return o.getvalue()
 
 def lock(name):
     if len(models.Lock.objects.filter(lock_name=name,lock_status="L"))>0:
@@ -47,7 +86,10 @@ def addneworders():
                 neworder.shipping_number = t[1]
                 neworder.shipping_zipcode = shipping_address["zip"]
                 neworder.shipping_city = shipping_address["city"]
-                neworder.shipping_country = shipping_address["country"]
+                t = shipping_address["country"]
+                if t in COUNTRYMAP.keys():
+                    t = COUNTRYMAP[t]
+                neworder.shipping_country = t
                 neworder.shipping_type = "DHL"
                 neworder.shopsync = "S" 
                 neworder.printsync = "N" 
@@ -92,6 +134,48 @@ def printorders(orders):
     finally:
         unlock("newprints")
 
+def previewpuzzle(puzzle):
+    if not puzzle:
+        return
+    order = puzzle.order
+    s3 = None
+    for image in models.Image.objects.filter(puzzle=puzzle):
+        if image.image_type=="P":
+            s3 = image.image_s3
+    if s3:
+        p = printer.Order()
+        p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
+        p.puzzle_title = puzzle.puzzle_title
+        p.puzzle_id = puzzle.puzzle_id
+        p.order_id = order.order_id
+        p.shipping_name = order.shipping_name
+        p.shipping_street = order.shipping_street
+        p.shipping_number = order.shipping_number
+        p.shipping_zipcode = order.shipping_zipcode
+        p.shipping_city = order.shipping_city
+        p.shipping_country = order.shipping_country
+        p.shipping_provider = order.shipping_type
+        for t in COLORTABLE:
+            if puzzle.puzzle_color==t[0]:
+                p.color = t[1]
+                break
+        for t in ORIENTATIONTABLE:
+            if puzzle.puzzle_orientation==t[0]:
+                p.orientation = t[1]
+                break
+        for t in PUZZLETABLE:
+            if puzzle.puzzle_type==t[0]:
+                p.puzzle_type = t[1]
+                break
+        for t in TEMPLATETABLE:
+            if puzzle.puzzle_template==t[0]:
+                p.template = t[1]
+                break
+        p.makepreview()
+        if p.preview:
+            puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+        puzzle.save()
+
 def previeworder(order):
     if not order:
         return
@@ -134,7 +218,12 @@ def previeworder(order):
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
             puzzle.save()
 
-def printdemo(order,dir="/tmp"):
+def printdemo(order,order_id=None,directory="/tmp"):
+    if order_id and not order:
+        t = models.Order.objects.filter(order_id=order_id)
+        if len(t)>0:
+            order = t[0]
+    print "demo for "+str(order)
     for puzzle in models.Puzzle.objects.filter(order=order):
         s3 = None
         for image in models.Image.objects.filter(puzzle=puzzle):
@@ -153,6 +242,7 @@ def printdemo(order,dir="/tmp"):
             p.shipping_city = order.shipping_city
             p.shipping_country = order.shipping_country
             p.shipping_provider = order.shipping_type
+            p.additionaldata = renderinvoice(readinvoice(order.order_id))
             for t in COLORTABLE:
                 if puzzle.puzzle_color==t[0]:
                     p.color = t[1]
@@ -169,7 +259,7 @@ def printdemo(order,dir="/tmp"):
                 if puzzle.puzzle_template==t[0]:
                     p.template = t[1]
                     break
-            p.write(dir)
+            p.write(directory)
 
 def printorder(order,force=False):
     if not order:
@@ -195,6 +285,7 @@ def printorder(order,force=False):
             p.shipping_city = order.shipping_city
             p.shipping_country = order.shipping_country
             p.shipping_provider = order.shipping_type
+            p.additionaldata = renderinvoice(readinvoice(order.order_id))
             for t in COLORTABLE:
                 if puzzle.puzzle_color==t[0]:
                     p.color = t[1]
