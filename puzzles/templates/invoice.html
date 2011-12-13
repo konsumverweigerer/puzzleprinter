@@ -1,0 +1,71 @@
+<div align="right" style="margin-bottom: 10px;">
+<img src="http://media.bikemoments.com/puzzleprinter/logo_hg_ws.png" alt="puzzleprinter logo" border="0"/>
+</div>
+
+{{ billing_address.last_name }}  {{ billing_address.first_name }}<br/>
+{{ billing_address.street }}<br/>
+{{ billing_address.zip | upcase }}
+{{ billing_address.city }}<br/> 
+{{ billing_address.country }}<br/><br/>
+
+<h3>Rechnung</h3>
+<p style="font-size: 14px;">Bestellnummer: {{ order_name }} - Bestelldatum: {{ created_at date | date: "%d.%m.%Y %H:%M"  }}<br/>
+   Rechnungsnummer: {{ attributes }} - Rechnungsdatum: {{ created_at date | date: "%d.%m.%Y" }}<br/></p>
+
+<p>Vielen Dank, dass Sie folgende Produkte bei puzzleprinter.de erworben haben:</p>
+
+<div style="font-size: 12px;">
+{% for line_item in line_items %}
+  {{ line_item.quantity }} x {{ line_item.title }} &mdash; {{ line_item.price | money }}<br/>
+{% endfor %}
+</div>
+
+<table style="font-size: 12px;">
+  <tr>
+    <td>abzgl. Rabatt (Coupon):</td>
+    <td>-{{ total_discounts | money_with_currency }}</td>
+  </tr>
+  <tr>
+    <td>Zwischensumme:</td>
+    <td>{{ subtotal_price | money }}</td>
+  </tr>
+ <td>19% Mwst.</td>
+    <td>{{ tax_price | money }}</td>
+  <tr>
+    <td>Versandkosten:</td>
+    <td>{{ shipping_price | money }}</td>
+  </tr>
+  <tr>
+    <td style="border-top: 1px solid #333"><strong>zu zahlender Betrag:</strong></td>
+    <td style="border-top: 1px solid #333">{{ total_price | money }}</td>
+  </tr>
+</table>
+
+<p><em>Zahlmethode: {{ gateway }}</em></p>
+
+<p>
+{% if note %}
+  Note: {{ note }}<br/>
+{% endif %}
+</p>
+
+<h4>Ihre Bestellung wird an folgende Lieferadresse gesendet:</h4>
+
+<div style="padding: 8px; border: 2px solid #ccc;">
+  {{ shipping_address.name }}<br/>
+  {% if shipping_address.company %}
+    {{ shipping_address.company }}<br/>
+  {% endif %}
+  {{ shipping_address.street }}<br/>
+  {{ shipping_address.zip | upcase }}
+  {{ shipping_address.city }}<br/>
+  {% if shop.country != if shipping_address.country_code %}
+    {{ shipping_address.country }}
+  {% endif %}
+</div>
+
+<p>Bei Fragen schreiben Sie bitte an <u>support@puzzleprinter.de</u></p>
+
+<p style="font-size: 11px;"><strong>puzzleprinter.de</strong> - Taubenweg 5, 93149 Nittenau, Germany, Geschäftsführer: Robert Schmidkonz - UST-ID-Nr: DE176964379<br/>
+<strong>Support:</strong> E-Mail: support@puzzleprinter.de, Tel. 0049-9436-30100-202, Fax: 0049-9436-30100-602, <strong>www.puzzleprinter.de</strong></p>
+
