@@ -143,19 +143,21 @@ class Order:
             send_file(s3,content,username=AWSKEYID,password=AWSSECRET)
 
     def createpreview(self,puzzle,cover):
-        try:
-            blob = pgmagick.Blob(cover)
-            img = pgmagick.Image()
-            img.density('36')
-            img.read(blob,pgmagick.Geometry(640,480))
-            img.scale('640x480')
-            (fd,n) = tempfile.mkstemp(suffix=".jpg")
-            img.write(n)
-            t = open(n).read()
-            os.remove(n)
-            return t
-        except:
-            pass
+        d = 72
+        while d>4:
+            try:
+                blob = pgmagick.Blob(cover)
+                img = pgmagick.Image()
+                img.density(str(d))
+                img.read(blob,pgmagick.Geometry(640,480))
+                img.scale('640x480')
+                (fd,n) = tempfile.mkstemp(suffix=".jpg")
+                img.write(n)
+                t = open(n).read()
+                os.remove(n)
+                return t
+            except:
+                d = d/2
         return None
 
     def createpuzzle(self,bc):
