@@ -6,7 +6,7 @@ import logging,StringIO,os
 from django.core.files.base import ContentFile
 from xhtml2pdf import document
 
-import sys
+import string,sys
 reload(sys)
 
 COUNTRYMAP = {
@@ -32,17 +32,20 @@ def readinvoice(orderid=None):
     hsh = mechanize.HTTPSHandler()
     opener = mechanize.build_opener(hh, hsh)
     mechanize.install_opener(opener)
-    req = mechanize.Request("%s%s?template_id=%s"%(SHOPINVOICEURL,orderid,INVOICEID))
-    req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
-    req.add_header('X-Requested-With','XMLHttpRequest')
-    req.add_header('Referer',url)
-    cj.add_cookie_header(req)
-    res = mechanize.urlopen(req)
-    return (t,res.read())
+    data = [t]
+    for inv in INVOICEID.split(","):
+        req = mechanize.Request("%s%s?template_id=%s"%(SHOPINVOICEURL,orderid,inv))
+        req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
+        req.add_header('X-Requested-With','XMLHttpRequest')
+        req.add_header('Referer',url)
+        cj.add_cookie_header(req)
+        res = mechanize.urlopen(req)
+        data.append(res.read())
+    return data
 
 def renderinvoice(invoice):
     w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html"))
-    i = StringIO.StringIO(w.read()%(invoice[1],))
+    i = StringIO.StringIO(w.read()%(string.join(invoice[1:],'\n'),))
     o = StringIO.StringIO()
     document.pisaDocument(i,o)
     return o.getvalue()
