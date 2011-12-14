@@ -5,6 +5,7 @@ import models,printer,shop,mechanize
 import logging,StringIO,os
 from django.core.files.base import ContentFile
 from xhtml2pdf import document
+from pyPdf import pdf
 
 import string,sys
 reload(sys)
@@ -40,14 +41,21 @@ def readinvoice(orderid=None):
         req.add_header('Referer',url)
         cj.add_cookie_header(req)
         res = mechanize.urlopen(req)
-        data.append(res.read())
+        data.append((inv,res.read()))
     return data
 
+def addinvoicewrap(i):
+    return "<div id=\"preview\" class=\"clearfix preview-content\"><div id=\"preview-%s\">%s</div></div>"%(i[0],i[1])
+
 def renderinvoice(invoice):
-    w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html"))
-    i = StringIO.StringIO(w.read()%(string.join(invoice[1:],'\n'),))
+    writer = pdf.PdfFileWriter()
+    w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html")).read()
+    for i in (w%(addinvoicewrap(x)) for x in invoice[1:]):
+        o = StringIO.StringIO()
+        document.pisaDocument(StringIO.StringIO(i),o)
+        writer.addPage(pdf.PdfFileReader(StringIO.StringIO(o.getvalue())).getPage(0))
     o = StringIO.StringIO()
-    document.pisaDocument(i,o)
+    writer.write(o)
     return o.getvalue()
 
 def lock(name):
