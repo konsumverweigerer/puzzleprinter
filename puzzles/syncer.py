@@ -176,7 +176,12 @@ def previewpuzzle(puzzle):
             puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
         puzzle.save()
 
-def previeworder(order):
+def previeworder(order,order_id=None):
+    if order_id and not order:
+        t = models.Order.objects.filter(order_id=order_id)
+        if len(t)>0:
+            order = t[0]
+    print "preview for "+str(order)
     if not order:
         return
     for puzzle in models.Puzzle.objects.filter(order=order):
