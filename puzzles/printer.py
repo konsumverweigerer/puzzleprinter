@@ -145,7 +145,9 @@ class Order:
     def createpreview(self,puzzle,cover):
         try:
             blob = pgmagick.Blob(cover)
-            img = pgmagick.Image(blob,pgmagick.Geometry(600,480))
+            img = pgmagick.Image()
+            img.density('36')
+            img.read(blob,pgmagick.Geometry(640,480))
             img.scale('640x480')
             (fd,n) = tempfile.mkstemp(suffix=".jpg")
             img.write(n)
