@@ -103,8 +103,8 @@ class OrderAdmin(admin.ModelAdmin):
         }),
     )
     inlines = [ PuzzleInline ]
-    list_display = ["order_id","shipping_name","order_status","approval"]
-    ordering = ["order_date","shipping_name"]
+    list_display = ["order_id","order_date","shipping_name","order_status","approval","touch_date"]
+    ordering = ["order_date","shipping_name","touch_date"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
     actions = [make_approved,make_closed,make_print]
     formfield_overrides = {
