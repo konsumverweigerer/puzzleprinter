@@ -302,21 +302,24 @@ class Order:
             except:
                 pass
         else:
+            print "reading status only from status for "+str(fn)
             self.state = "ACC"
-        for sfp in statusfp:
-            status = MyConfigParser()
-            status.readfp(StringIO.StringIO(sfp))
-            if not ps:
-                try:
-                    self.printing_status = status.get("BookStates",fn[:-4])
-                except:
-                    pass
-            try:
-                self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
-            except:
-                pass
-            if (not self.printing_status) and (not self.shipping_status):
-                break
+        if not ps:
+            for sfp in statusfp:
+                status = MyConfigParser()
+                status.readfp(StringIO.StringIO(sfp))
+                if not self.printing_status:
+                    try:
+                        self.printing_status = status.get("BookStates",fn[:-4])
+                    except:
+                        pass
+                if not self.shipping_country:
+                    try:
+                        self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
+                    except:
+                        pass
+                if self.printing_status and self.shipping_status:
+                    break
 
     @staticmethod
     def fromFile(fn,data,statusdata):
