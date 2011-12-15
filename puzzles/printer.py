@@ -258,8 +258,8 @@ class Order:
             data.set("Book","Delivery0ParcelService",self.shipping_provider)
 
             if self.additionaldata:
-                additionalpdf = "additional.pdf"
-                if directory:
+                additionalpdf = "ADDITIONAL.PDF"
+                If directory:
                     open(os.path.join(directory,basename,additionalpdf),'w').write(self.additionaldata)
                 else:
                     ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(self.additionaldata))
