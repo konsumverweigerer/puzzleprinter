@@ -50,20 +50,20 @@ class PuzzleInline(StackedInline):
     }
 
 class PuzzleAdmin(admin.ModelAdmin):
-    readonly_fields = ["puzzle_id"]
+    readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode"]
     fieldsets = (
         (None,{
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
         }),
         ("Status",{
-            "fields":("printing_status",),
+            "fields":("printing_status","shipping_status","puzzle_status","puzzle_barcode"),
         }),
         ("Preview",{
             "fields":("preview",),
         }),
     )
     inlines = [ImageInline]
-    list_display = ["puzzle_id","puzzle_type","puzzle_title"]
+    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
     formfield_overrides = {
