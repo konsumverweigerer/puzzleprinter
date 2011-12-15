@@ -185,6 +185,8 @@ def previewpuzzle(puzzle):
         p.makepreview()
         if p.preview:
             puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+        if p.barcode:
+            puzzle.puzzle_barcode = p.barcode
         puzzle.save()
 
 def previeworder(order,order_id=None):
@@ -232,6 +234,8 @@ def previeworder(order,order_id=None):
             p.makepreview()
             if p.preview:
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+            if p.barcode:
+                puzzle.puzzle_barcode = p.barcode
             puzzle.save()
 
 def printdemo(order,order_id=None,directory="/tmp"):
@@ -321,6 +325,8 @@ def printorder(order,force=False):
             p.write()
             if p.preview:
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+            if p.barcode:
+                puzzle.puzzle_barcode = p.barcode
             puzzle.printing_status = "P"
             puzzle.save()
     order.printsync = "S"
@@ -347,8 +353,17 @@ def addprintstatus():
                 order = models.Order.objects.get(order_id=p.order_id)
                 puzzles = models.Puzzle.objects.filter(order=order)
             except:
-                print "could not find order with "+p.order_id
-                continue
+                if p.barcode:
+                    try:
+                        puzzles = models.Puzzle.objects.filter(puzzle_barcode=p.barcode)[0:1]
+                        for puzzle in puzzles:
+                            order = puzzle.order
+                    except:
+                        print "could not find order for "+str(p.barcode)
+                        continue
+                if not puzzles or not order):
+                    print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
+                    continue
             for puzzle in puzzles:
                 bc = p.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
@@ -370,6 +385,19 @@ def addprintstatus():
                     order.save()
     finally:
         unlock("printstatus")
+
+def addbarcodes():
+    if not lock("barcode"):
+        return
+    try:
+        puzzles = models.Puzzle.objects.all()
+        for puzzle in puzzles
+            if not puzzles.puzzle_barcode:
+                order = puzzle.order
+                puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
+                puzzle.save()
+    finally:
+        unlock("barcode")
 
 def addfulfillments():
     if not lock("fulfillments"):

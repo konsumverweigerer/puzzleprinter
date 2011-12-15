@@ -67,6 +67,19 @@ def send_file(uri,content,username=None,password=None):
         key = bucket.new_key(key_name)
     key.set_contents_from_string(content)
 
+def makebarcode(order_id,puzzle_id):
+    if len(PRINTERKN)==2:
+        t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%1000000000)
+        while len(t)<9:
+            t = "0"+t
+        return PRINTERKN+t+"0"
+    elif len(PRINTERKN)==3:
+        t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
+        while len(t)<8:
+            t = "0"+t
+        return PRINTERKN+t+"0"
+    return ""
+
 class Order:
     order_id = ""
     puzzle_id = ""
@@ -105,21 +118,9 @@ class Order:
                     return True
         return False
 
-    def makebarcode(self,order_id,puzzle_id):
-        if len(PRINTERKN)==2:
-            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%1000000000)
-            while len(t)<9:
-                t = "0"+t
-            return PRINTERKN+t+"0"
-        elif len(PRINTERKN)==3:
-            t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
-            while len(t)<8:
-                t = "0"+t
-            return PRINTERKN+t+"0"
-        return ""
 
     def generatebarcode(self):
-        self.barcode = self.makebarcode(self.order_id,self.puzzle_id)
+        self.barcode = makebarcode(self.order_id,self.puzzle_id)
         return self.barcode
 
     def generatebooktype(self):
@@ -347,7 +348,6 @@ def readorders(ext=['FLT','ACC'],barcodes=[]):
                 for v in s.options("BookStates"):
                     if v not in barcodes:
                         barcodes.append(v)
-                        print "adding barcode: "+v
             except:
                 pass
             status.append(t)
