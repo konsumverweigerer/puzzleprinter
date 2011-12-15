@@ -392,7 +392,7 @@ def addbarcodes():
     try:
         puzzles = models.Puzzle.objects.all()
         for puzzle in puzzles:
-            if not puzzles.puzzle_barcode:
+            if not puzzle.puzzle_barcode:
                 order = puzzle.order
                 puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 puzzle.save()
