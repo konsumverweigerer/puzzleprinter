@@ -367,7 +367,11 @@ def addprintstatus():
             for puzzle in puzzles:
                 bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
-                    print "add status for: "+str(bc)+" "+puzzle.puzzle_barcode+" "+str(p.printing_status)+" "+str(p.shipping_status)
+                    t = "%s: %s"%(p.printing_status,p.shipping_status)
+                    if t and len(t)>255:
+                        puzzle.puzzle_status = t[0:255]
+                    else:
+                        puzzle.puzzle_status = t
                     if p.finished() and puzzle.printing_status!="F":
                         puzzle.printing_status = "F"
                         order.shopsync = "N"
