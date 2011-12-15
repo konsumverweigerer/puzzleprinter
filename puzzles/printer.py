@@ -284,40 +284,50 @@ class Order:
 
     def read(self,fn,fp,statusfp=[]):
         data = MyConfigParser()
-        data.readfp(fp)
+        ps = False
         self.state = fn[-3:]
-        self.order_id = data.get("Order","CustomersOrderNumber")
-        self.shipping_name = data.get("Book","Delivery0Name")
-        self.shipping_street = data.get("Book","Delivery0Street")
-        self.shipping_number = data.get("Book","Delivery0HouseNumber")
-        self.shipping_zipcode = data.get("Book","Delivery0ZipCode")
-        self.shipping_city = data.get("Book","Delivery0City")
-        self.shipping_country = data.get("Book","Delivery0Country")
-        try:
-            self.printing_status = data.get("Faults","0Text")
-        except:
-            for sfp in statusfp:
-                status = MyConfigParser()
-                status.readfp(StringIO.StringIO(sfp))
+        if fp:
+            data.readfp(fp)
+            self.order_id = data.get("Order","CustomersOrderNumber")
+            self.shipping_name = data.get("Book","Delivery0Name")
+            self.shipping_street = data.get("Book","Delivery0Street")
+            self.shipping_number = data.get("Book","Delivery0HouseNumber")
+            self.shipping_zipcode = data.get("Book","Delivery0ZipCode")
+            self.shipping_city = data.get("Book","Delivery0City")
+            self.shipping_country = data.get("Book","Delivery0Country")
+            try:
+                self.printing_status = data.get("Faults","0Text")
+                ps = True
+            except:
+                pass
+        else:
+            self.state = "ACC"
+        for sfp in statusfp:
+            status = MyConfigParser()
+            status.readfp(StringIO.StringIO(sfp))
+            if not ps:
                 try:
                     self.printing_status = status.get("BookStates",fn[:-4])
                 except:
                     pass
-                try:
-                    self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
-                except:
-                    pass
-                if (not self.printing_status) and (not self.shipping_status):
-                    break
+            try:
+                self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
+            except:
+                pass
+            if (not self.printing_status) and (not self.shipping_status):
+                break
 
     @staticmethod
     def fromFile(fn,data,statusdata):
         o = Order()
-        o.read(fn,StringIO.StringIO(data),statusdata)
+        if data:
+            o.read(fn,StringIO.StringIO(data),statusdata)
+        else:
+            o.read(fn,None,statusdata)
         o.barcode = fn[0:-4]
         return o
 
-def readorders(ext=['FLT','ACC']):
+def readorders(ext=['FLT','ACC'],barcodes=[]):
     ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
     orders = []
     if not ftp:
@@ -331,11 +341,25 @@ def readorders(ext=['FLT','ACC']):
             statusio = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:statusio.write(x))
             t = statusio.getvalue()
+            s = MyConfigParser()
+            s.readfp(StringIO.StringIO(t))
+            try:
+                for v in s.options("BookStates"):
+                    if v not in barcodes:
+                        barcodes.append(v)
+                        print "adding barcode: "+v
+            except:
+                pass
             status.append(t)
         for fn in [x for x in files if x[-3:] in ext]:
             v = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:v.write(x))
-            orders.append(Order.fromFile(fn,v.getvalue(),status))
+            o = Order.fromFile(fn,v.getvalue(),status)
+            if o.barcode in barcodes:
+                barcodes.remove(o.barcode)
+            orders.append(o)
+        for fn in ["%s.ACC"%(x) for x in barcodes]:
+            orders.append(Order.fromFile(fn,None,status))
     finally:
         ftp.quit()
     return orders
