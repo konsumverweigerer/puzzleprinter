@@ -361,7 +361,7 @@ def addprintstatus():
                     except:
                         print "could not find order for "+str(p.barcode)
                         continue
-                if not puzzles or not order):
+                if not puzzles or not order:
                     print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
                     continue
             for puzzle in puzzles:
