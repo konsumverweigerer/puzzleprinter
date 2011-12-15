@@ -83,6 +83,7 @@ class Puzzle(models.Model):
         (u"F", u"Finished"),
     )
     puzzle_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify line item")
+    puzzle_barcode = models.CharField(max_length=64,blank=True,null=True,verbose_name="Printer barcode")
     puzzle_type = models.CharField(max_length=64,choices=TYPES)
     puzzle_template = models.CharField(max_length=64,choices=TEMPLATES)
     puzzle_orientation = models.CharField(max_length=64,choices=ORIENTATION)
