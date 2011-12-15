@@ -259,7 +259,7 @@ class Order:
 
             if self.additionaldata:
                 additionalpdf = "ADDITIONAL.PDF"
-                If directory:
+                if directory:
                     open(os.path.join(directory,basename,additionalpdf),'w').write(self.additionaldata)
                 else:
                     ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(self.additionaldata))
