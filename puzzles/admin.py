@@ -63,7 +63,7 @@ class PuzzleAdmin(admin.ModelAdmin):
         }),
     )
     inlines = [ImageInline]
-    list_display = ["puzzle_id","puzzle_type","puzzle_title"]
+    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
     formfield_overrides = {
