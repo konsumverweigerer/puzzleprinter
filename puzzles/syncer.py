@@ -354,7 +354,6 @@ def addprintstatus():
                 puzzles = models.Puzzle.objects.filter(order=order)
             except:
                 if p.barcode:
-                    print "search by barcode: "+p.barcode
                     try:
                         puzzles = models.Puzzle.objects.filter(puzzle_barcode=p.barcode)[0:1]
                         for puzzle in puzzles:
@@ -368,7 +367,7 @@ def addprintstatus():
             for puzzle in puzzles:
                 bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
-                    print "add status for: "+str(bc)+" "+puzzle.puzzle_barcode+" "+str(puzzle.printing_status)
+                    print "add status for: "+str(bc)+" "+puzzle.puzzle_barcode+" "+str(p.printing_status)+" "+str(p.shipping_status)
                     if p.finished() and puzzle.printing_status!="F":
                         puzzle.printing_status = "F"
                         order.shopsync = "N"
