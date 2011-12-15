@@ -365,7 +365,7 @@ def addprintstatus():
                     print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
                     continue
             for puzzle in puzzles:
-                bc = p.makebarcode(order.order_id,puzzle.puzzle_id)
+                bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
                     if p.finished() and puzzle.printing_status!="F":
                         puzzle.printing_status = "F"
