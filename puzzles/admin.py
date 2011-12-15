@@ -56,7 +56,7 @@ class PuzzleAdmin(admin.ModelAdmin):
             "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
         }),
         ("Status",{
-            "fields":("printing_status","shipping_status","puzzle_status","puzzle_barcode"),
+            "fields":("printing_status","puzzle_status","puzzle_barcode"),
         }),
         ("Preview",{
             "fields":("preview",),
