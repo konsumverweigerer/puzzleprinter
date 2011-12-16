@@ -285,7 +285,6 @@ class Order:
 
     def read(self,fn,fp,statusfp=[]):
         data = MyConfigParser()
-        ps = False
         self.state = fn[-3:]
         if fp:
             data.readfp(fp)
@@ -298,28 +297,26 @@ class Order:
             self.shipping_country = data.get("Book","Delivery0Country")
             try:
                 self.printing_status = data.get("Faults","0Text")
-                ps = True
             except:
                 pass
         else:
             print "reading status only from status for "+str(fn)
             self.state = "ACC"
-        if not ps:
-            for sfp in statusfp:
-                status = MyConfigParser()
-                status.readfp(StringIO.StringIO(sfp))
-                if not self.printing_status:
-                    try:
-                        self.printing_status = status.get("BookStates",fn[:-4])
-                    except:
-                        pass
-                if not self.shipping_country:
-                    try:
-                        self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
-                    except:
-                        pass
-                if self.printing_status and self.shipping_status:
-                    break
+        for sfp in statusfp:
+            status = MyConfigParser()
+            status.readfp(StringIO.StringIO(sfp))
+            if not self.printing_status:
+                try:
+                    self.printing_status = status.get("BookStates",fn[:-4])
+                except:
+                    pass
+            if not self.shipping_status:
+                try:
+                    self.shipping_status = status.get("ShippingInfo",fn[:-4]+"_0")
+                except:
+                    pass
+            if self.printing_status and self.shipping_status:
+                break
 
     @staticmethod
     def fromFile(fn,data,statusdata):
