@@ -71,7 +71,7 @@ class PuzzleAdmin(admin.ModelAdmin):
     }
     def save_model(self,request,obj,form,change):
         syncer.previewpuzzle(obj)
-        admin.ModelAdmin.save_model(request,obj,form,change)
+        admin.ModelAdmin.save_model(self,request,obj,form,change)
 
 def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
