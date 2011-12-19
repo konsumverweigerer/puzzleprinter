@@ -88,53 +88,56 @@ def addneworders():
         print "searching orders since: "+str(since_id)
         neworders = shop.openOrders(since_id=since_id)
         for order in neworders:
-            if len(models.Order.objects.filter(order_id=order[0]))==0:
-                shipping_address = order[1]["shipping_address"]
-                neworder = models.Order(order_id=order[0],order_date=order[1]["created_at"].strftime("%Y-%m-%d %H:%M:%S"),shipping_id=order[0])
-                neworder.shipping_name = shipping_address["name"]
-                t = models.splitaddress(shipping_address["address1"])
-                neworder.shipping_street = t[0]
-                neworder.shipping_number = t[1]
-                neworder.shipping_zipcode = shipping_address["zip"]
-                neworder.shipping_city = shipping_address["city"]
-                t = shipping_address["country"]
-                if t in COUNTRYMAP.keys():
-                    t = COUNTRYMAP[t]
-                neworder.shipping_country = t
-                neworder.shipping_type = "DHL"
-                neworder.shopsync = "S" 
-                neworder.printsync = "N" 
-                neworder.total_lineitems = order[1]["total_price"]
-                neworder.save()
-                for product in order[2]:
-                    prod = product[0]
-                    opt = product[1]
-                    newpuzzle = models.Puzzle(puzzle_id=prod["id"])
-                    for t in PUZZLETABLE:
-                        if t[0]==opt[2]:
-                            newpuzzle.puzzle_type = t[1]
-                    newpuzzle.puzzle_template = opt[4]
-                    newpuzzle.puzzle_orientation = opt[3]
-                    newpuzzle.puzzle_color = opt[5]
-                    newpuzzle.puzzle_title = opt[1]
-                    newpuzzle.puzzle_text = ""
-                    newpuzzle.printing_status = "N"
-                    newpuzzle.order = neworder
-                    newpuzzle.save()
-                    newimage = models.Image()
-                    newimage.image_type = "P"
-                    newimage.image_s3 = opt[6]
-                    newimage.puzzle = newpuzzle
-                    newimage.save()
-                sys.setdefaultencoding("utf8")
-                order[4].attributes["note_attributes"] = {
-                    "invoiceid": neworder.id,
-                }
-                order[4].save()
-                sys.setdefaultencoding("ascii")
-                previeworder(neworder)
+            addneworder(order)
     finally:
         unlock("neworders")
+
+def addneworder(order):
+    if len(models.Order.objects.filter(order_id=order[0]))==0:
+        shipping_address = order[1]["shipping_address"]
+        neworder = models.Order(order_id=order[0],order_date=order[1]["created_at"].strftime("%Y-%m-%d %H:%M:%S"),shipping_id=order[0])
+        neworder.shipping_name = shipping_address["name"]
+        t = models.splitaddress(shipping_address["address1"])
+        neworder.shipping_street = t[0]
+        neworder.shipping_number = t[1]
+        neworder.shipping_zipcode = shipping_address["zip"]
+        neworder.shipping_city = shipping_address["city"]
+        t = shipping_address["country"]
+        if t in COUNTRYMAP.keys():
+            t = COUNTRYMAP[t]
+        neworder.shipping_country = t
+        neworder.shipping_type = "DHL"
+        neworder.shopsync = "S" 
+        neworder.printsync = "N" 
+        neworder.total_lineitems = order[1]["total_price"]
+        neworder.save()
+        for product in order[2]:
+            prod = product[0]
+            opt = product[1]
+            newpuzzle = models.Puzzle(puzzle_id=prod["id"])
+            for t in PUZZLETABLE:
+                if t[0]==opt[2]:
+                    newpuzzle.puzzle_type = t[1]
+            newpuzzle.puzzle_template = opt[4]
+            newpuzzle.puzzle_orientation = opt[3]
+            newpuzzle.puzzle_color = opt[5]
+            newpuzzle.puzzle_title = opt[1]
+            newpuzzle.puzzle_text = ""
+            newpuzzle.printing_status = "N"
+            newpuzzle.order = neworder
+            newpuzzle.save()
+            newimage = models.Image()
+            newimage.image_type = "P"
+            newimage.image_s3 = opt[6]
+            newimage.puzzle = newpuzzle
+            newimage.save()
+        sys.setdefaultencoding("utf8")
+        order[4].attributes["note_attributes"] = {
+            "invoiceid": neworder.id,
+        }
+        order[4].save()
+        sys.setdefaultencoding("ascii")
+        previeworder(neworder)
 
 def printorders(orders):
     if not lock("newprints"):
@@ -418,6 +421,8 @@ def addfulfillments():
     try:
         orders = models.Order.objects.filter(shopsync="N")
         for order in orders:
+            if order.reprint_number:
+                break
             if order.shipping_status=="S":
                 shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
                 order.order_status = "F"

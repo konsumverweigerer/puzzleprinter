@@ -56,6 +56,8 @@ class Order(models.Model):
     shipping_status = models.CharField(max_length=4,choices=SHIPPING,default="N")
     shipping_tracking = models.CharField(max_length=50,blank=True,verbose_name="Tracking id")
     shipping_date = models.DateTimeField("shipping date",blank=True,null=True)
+    reprint_number = models.IntegerField(null=True,blank=True,verbose_name="Reprint number")
+    reprint_reason = models.CharField(max_length=255,blank=True,null=True,verbose_name="Reprint reason")
     shopsync = models.CharField(max_length=4,choices=SHOPSYNC,verbose_name="In sync with shop")
     printsync = models.CharField(max_length=4,choices=PRINTSYNC,verbose_name="In sync with printer")
     approval = models.CharField(max_length=4,choices=APPROVAL,verbose_name="Approved for printing",default="N")
