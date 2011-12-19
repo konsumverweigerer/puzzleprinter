@@ -162,6 +162,8 @@ def previewpuzzle(puzzle,puzzle_id=None):
             s3 = image.image_s3
     if s3:
         p = printer.Order()
+        if order.reprint_number:
+            p.reprint = str(order.reprint_number)
         p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
         p.puzzle_title = puzzle.puzzle_title
         p.puzzle_id = puzzle.puzzle_id
@@ -212,6 +214,8 @@ def previeworder(order,order_id=None):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            if order.reprint_number:
+                p.reprint = str(order.reprint_number)
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -260,6 +264,8 @@ def printdemo(order,order_id=None,directory="/tmp"):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            if order.reprint_number:
+                p.reprint = str(order.reprint_number)
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -304,6 +310,8 @@ def printorder(order,force=False):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            if order.reprint_number:
+                p.reprint = str(order.reprint_number)
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -376,7 +384,10 @@ def addprintstatus():
                     print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
                     continue
             for puzzle in puzzles:
-                bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
+                if order.reprint_number:
+                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
+                else:
+                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
                     t = "%s: %s"%(p.printing_status,p.shipping_status)
                     if t and len(t)>255:
