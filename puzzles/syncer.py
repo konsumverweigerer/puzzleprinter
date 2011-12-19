@@ -422,7 +422,7 @@ def addbarcodes():
             if not puzzle.puzzle_barcode:
                 order = puzzle.order
                 if order.reprint_number:
-                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number)
+                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
                 else:
                     puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 puzzle.save()
