@@ -139,6 +139,45 @@ def addneworder(order):
         sys.setdefaultencoding("ascii")
         previeworder(neworder)
 
+def makereprint(order,reprint_reason="Reprinting"):
+    if not lock("newprints"):
+        return
+    try:
+        reprint_number = 1
+        while len(models.Order.objects.filter(order_id=order.order_id,reprint_number=reprint_number))>0:
+            reprint_number = reprint_number+1
+        neworder = models.Order(order_id=order.order_id,order_date=order.order_date,shipping_id=order.shipping_id)
+        neworder.shipping_name = order.shipping_name
+        neworder.shipping_street = order.shipping_street
+        neworder.shipping_number = order.shipping_number
+        neworder.shipping_zipcode = order.shipping_zipcode
+        neworder.shipping_city = order.shipping_city
+        neworder.shipping_country = order.shipping_country
+        neworder.shipping_type = order.shipping_type
+        neworder.shopsync = "S"
+        neworder.printsync = "N" 
+        neworder.total_lineitems = order.total_lineitems
+        neworder.save()
+        for puzzle in models.Puzzle.objects.filter(order=order):
+            newpuzzle = models.Puzzle(puzzle_id=puzzle.puzzle_id)
+            newpuzzle.puzzle_type = puzzle.puzzle_type
+            newpuzzle.puzzle_template = puzzle.puzzle_template
+            newpuzzle.puzzle_orientation = puzzle.puzzle_orientation
+            newpuzzle.puzzle_color = puzzle.puzzle_color
+            newpuzzle.puzzle_title = puzzle.puzzle_title
+            newpuzzle.puzzle_text = puzzle.puzzle_text
+            newpuzzle.printing_status = "N"
+            newpuzzle.order = neworder
+            newpuzzle.save()
+            for image in models.Image.objects.filter(puzzle=puzzle):
+                newimage = models.Image()
+                newimage.image_type = image.image_type
+                newimage.image_s3 = image.image_s3
+                newimage.puzzle = newpuzzle
+                newimage.save()
+    finally:
+        unlock("newprints")
+
 def printorders(orders):
     if not lock("newprints"):
         return
