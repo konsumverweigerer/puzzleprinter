@@ -148,7 +148,7 @@ def printorders(orders):
     finally:
         unlock("newprints")
 
-def previewpuzzle(puzzle,puzzle_id):
+def previewpuzzle(puzzle,puzzle_id=None):
     if puzzle_id and not puzzle:
         t = models.Puzzle.objects.filter(puzzle_id=puzzle_id)
         if len(t)>0:
