@@ -421,7 +421,10 @@ def addbarcodes():
         for puzzle in puzzles:
             if not puzzle.puzzle_barcode:
                 order = puzzle.order
-                puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
+                if order.reprint_number:
+                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number)
+                else:
+                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 puzzle.save()
     finally:
         unlock("barcode")
