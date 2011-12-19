@@ -90,10 +90,10 @@ make_print.short_description = "Print selected orders"
 
 class OrderAdmin(admin.ModelAdmin):
     search_fields = ["shipping_name","order_id"]
-    readonly_fields = ["order_id","shipping_id","shopsync","printsync","order_date","touch_date","shipping_date","approval_date"]
+    readonly_fields = ["order_id","shipping_id","shopsync","printsync","order_date","touch_date","shipping_date","approval_date","reprint_number","reprint_reason"]
     fieldsets = (
         (None, {
-            "fields":("order_id","shipping_id"),
+            "fields":("order_id","shipping_id","reprint_number","reprint_reason"),
         }),
         ("Timestamps", {
             "fields":("order_date","shipping_date","approval_date"),
