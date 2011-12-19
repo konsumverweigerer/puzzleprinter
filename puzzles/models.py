@@ -42,7 +42,7 @@ class Order(models.Model):
         (u"N", u"Not approved"),
         (u"A", u"Approved"),
     )
-    order_id = models.CharField(max_length=64,default=randid("o"),unique=True,verbose_name="Shopify Order id")
+    order_id = models.CharField(max_length=64,default=randid("o"),verbose_name="Shopify Order id")
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS,default="N")
     shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
@@ -91,7 +91,7 @@ class Puzzle(models.Model):
     puzzle_template = models.CharField(max_length=64,choices=TEMPLATES)
     puzzle_orientation = models.CharField(max_length=64,choices=ORIENTATION)
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
-    puzzle_title = models.CharField(max_length=256)
+    puzzle_title = models.CharField(max_length=256,blank=True)
     puzzle_text = models.CharField(max_length=1000,blank=True)
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
     preview = models.ImageField(upload_to='preview',width_field="preview_width",height_field="preview_height",null=True,blank=True)
