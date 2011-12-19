@@ -67,14 +67,14 @@ def send_file(uri,content,username=None,password=None):
         key = bucket.new_key(key_name)
     key.set_contents_from_string(content)
 
-def makebarcode(order_id,puzzle_id):
+def makebarcode(order_id,puzzle_id,reprint=""):
     if len(PRINTERKN)==2:
-        t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%1000000000)
+        t = str(int(md5.md5(str(order_id)+str(puzzle_id)+reprint).hexdigest(),16)%1000000000)
         while len(t)<9:
             t = "0"+t
         return PRINTERKN+t+"0"
     elif len(PRINTERKN)==3:
-        t = str(int(md5.md5(str(order_id)+str(puzzle_id)).hexdigest(),16)%100000000)
+        t = str(int(md5.md5(str(order_id)+str(puzzle_id)+reprint).hexdigest(),16)%100000000)
         while len(t)<8:
             t = "0"+t
         return PRINTERKN+t+"0"
@@ -82,6 +82,7 @@ def makebarcode(order_id,puzzle_id):
 
 class Order:
     order_id = ""
+    reprint = ""
     puzzle_id = ""
     puzzle_type = "1000"
     puzzle_s3 = None
@@ -120,7 +121,7 @@ class Order:
 
 
     def generatebarcode(self):
-        self.barcode = makebarcode(self.order_id,self.puzzle_id)
+        self.barcode = makebarcode(self.order_id,self.puzzle_id,self.reprint)
         return self.barcode
 
     def generatebooktype(self):

@@ -38,7 +38,7 @@ class PuzzleInline(StackedInline):
     readonly_fields = ["printing_status","puzzle_id"]
     fieldsets = (
         (None,{
-            "fields":("preview","puzzle_type","puzzle_color","puzzle_title"),
+            "fields":("preview","puzzle_type","puzzle_color","puzzle_title","puzzle_barcode"),
         }),
         ("Status",{
             "fields":("printing_status",),
