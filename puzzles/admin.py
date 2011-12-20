@@ -63,7 +63,7 @@ class PuzzleAdmin(admin.ModelAdmin):
         }),
     )
     inlines = [ImageInline]
-    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status"]
+    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status","preview"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
     formfield_overrides = {
@@ -77,6 +77,11 @@ def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
     queryset.update(approval_date = time.strftime("%Y-%m-%d %H:%M:%S"))
 make_approved.short_description = "Mark selected orders as approved"
+
+def make_reprint(modeladmin,request,queryset):
+    for order in queryset:
+        syncer.makereprint(order)
+make_reprint.short_description = "Add an reprint order for selected"
 
 def make_closed(modeladmin,request,queryset):
     queryset.update(order_status="F",shopsync="S",printsync="S")
@@ -106,7 +111,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ["order_id","order_date","shipping_name","order_status","approval","touch_date"]
     ordering = ["order_date","shipping_name","touch_date"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
-    actions = [make_approved,make_closed,make_print]
+    actions = [make_approved,make_closed,make_print,make_reprint]
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }
