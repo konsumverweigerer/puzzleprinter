@@ -71,7 +71,8 @@ class PuzzleAdmin(admin.ModelAdmin):
         models.models.ImageField: {"widget": AdminImageWidget}
     }
     def save_model(self,request,obj,form,change):
-        syncer.previewpuzzle(obj)
+        if obj.printing_status=='N' or not obj.preview:
+            syncer.previewpuzzle(obj)
         admin.ModelAdmin.save_model(self,request,obj,form,change)
 
 def make_approved(modeladmin,request,queryset):
