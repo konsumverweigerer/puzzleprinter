@@ -84,10 +84,10 @@ class Order:
     order_id = ""
     reprint = ""
     puzzle_id = ""
-    puzzle_type = "1000"
+    puzzle_type = "0"
     puzzle_s3 = None
     puzzle_data = None
-    puzzle_title = "Mein Puzzle"
+    puzzle_title = ""
     state = "ODR"
     template = "std"
     orientation = "horizontal"

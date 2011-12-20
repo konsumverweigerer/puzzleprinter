@@ -50,6 +50,7 @@ class PuzzleInline(StackedInline):
     }
 
 class PuzzleAdmin(admin.ModelAdmin):
+    search_fields = ["puzzle_title","puzzle_id","puzzle_barcode"]
     readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode"]
     fieldsets = (
         (None,{

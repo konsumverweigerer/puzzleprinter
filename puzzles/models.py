@@ -43,6 +43,7 @@ class Order(models.Model):
         (u"A", u"Approved"),
     )
     order_id = models.CharField(max_length=64,default=randid("o"),verbose_name="Shopify Order id")
+    order_number = models.CharField(max_length=64,blank=True,null=True,verbose_name="Shopify Order number")
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS,default="N")
     shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
