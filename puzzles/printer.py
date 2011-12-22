@@ -301,7 +301,6 @@ class Order:
             except:
                 pass
         else:
-            print "reading status only from status for "+str(fn)
             self.state = "ACC"
         for sfp in statusfp:
             status = MyConfigParser()
