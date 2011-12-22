@@ -343,6 +343,8 @@ def printorder(order,force=False):
         if order.printsync!="N" or order.approval!="A":
             return
     for puzzle in models.Puzzle.objects.filter(order=order):
+        if puzzle.printing_status!="N" and not force:
+            continue
         s3 = None
         for image in models.Image.objects.filter(puzzle=puzzle):
             if image.image_type=="P":
