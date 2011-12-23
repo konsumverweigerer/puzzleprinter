@@ -109,6 +109,7 @@ def addneworder(order):
         neworder.shipping_type = "DHL"
         neworder.shopsync = "S" 
         neworder.printsync = "N" 
+        neworder.approval = "N" 
         neworder.total_lineitems = order[1]["total_price"]
         neworder.save()
         for product in order[2]:
