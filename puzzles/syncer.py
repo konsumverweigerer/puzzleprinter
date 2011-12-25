@@ -73,22 +73,28 @@ def unlock(name):
 
 def syncall():
     addneworders()
+    addneworders(True)
     addnewprints()
     addprintstatus()
     addfulfillments()
 
-def addneworders():
+def addneworders(force=False):
     if not lock("neworders"):
         return
     try:
-        since_id = None
-        v = models.Order.objects.order_by('-id')[0:1].get() 
-        if v:
-            since_id = v.order_id
-        print "searching orders since: "+str(since_id)
-        neworders = shop.openOrders(since_id=since_id)
-        for order in neworders:
-            addneworder(order)
+        if force:
+            neworders = shop.openOrders()
+            for order in neworders:
+                addneworder(order)
+        else:
+            since_id = None
+            v = models.Order.objects.order_by('-id')[0:1].get() 
+            if v:
+                since_id = v.order_id
+            print "searching orders since: "+str(since_id)
+            neworders = shop.openOrders(since_id=since_id)
+            for order in neworders:
+                addneworder(order)
     finally:
         unlock("neworders")
 
@@ -111,6 +117,7 @@ def addneworder(order):
         neworder.printsync = "N" 
         neworder.approval = "N" 
         neworder.total_lineitems = order[1]["total_price"]
+        neworder.order_number = order[1]"order_number"]
         neworder.save()
         for product in order[2]:
             prod = product[0]
