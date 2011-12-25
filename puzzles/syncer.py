@@ -117,7 +117,7 @@ def addneworder(order):
         neworder.printsync = "N" 
         neworder.approval = "N" 
         neworder.total_lineitems = order[1]["total_price"]
-        neworder.order_number = order[1]"order_number"]
+        neworder.order_number = order[1]["order_number"]
         neworder.save()
         for product in order[2]:
             prod = product[0]
