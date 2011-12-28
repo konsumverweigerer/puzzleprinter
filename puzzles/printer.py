@@ -33,6 +33,8 @@ AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Del
 ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
 FINISHEDSTATUS = ("CheckedOut","Delivered")
 
+PDFPS = False
+
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
         return optionstr
@@ -88,16 +90,17 @@ def makebarcode(order_id,puzzle_id,reprint=""):
     return ""
 
 def cleanuppdf(data):
-    (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
-    (psfd,ps) = tempfile.mkstemp(suffix=".ps")
-    pdffd = os.fdopen(pdffd,'w')
-    pdffd.write(data)
-    pdffd.close()
-    os.system("pdf2ps %s %s"%(pdf,ps))
-    os.system("ps2pdf13 %s %s"%(ps,pdf))
-    data = open(pdf).read()
-    os.remove(ps)
-    os.remove(pdf)
+    if PDFPS:
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".ps")
+        pdffd = os.fdopen(pdffd,'w')
+        pdffd.write(data)
+        pdffd.close()
+        os.system("pdf2ps %s %s"%(pdf,ps))
+        os.system("ps2pdf13 %s %s"%(ps,pdf))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
     return data
 
 class Order:
