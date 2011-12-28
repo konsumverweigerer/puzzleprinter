@@ -9,7 +9,7 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, Frame
 from reportlab.lib.utils import ImageReader
-from reportlab.graphics import barcode
+from reportlab.graphics import barcode,shapes
 from reportlab.lib.colors import Color,HexColor
 from PIL import Image
 
@@ -57,7 +57,9 @@ def runtemplate(template,trafos,canvas,args,width,height):
             renderpart(canvas,t[1],list(args))
 
 def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.setFillColor(HexColor(color))
+    color = HexColor(color)
+    color.alpha = None
+    canvas.setFillColor(color)
     canvas.rect(0,0,width,height,fill=True,stroke=False)
 
 t200files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
@@ -71,12 +73,16 @@ def colordark(color):
 def r200m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t200files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask="auto")
     canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,20*mm)
     canvas.drawString(12*mm,12*mm,title)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rotate(90)
     canvas.translate(156*mm,-280*mm)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
@@ -87,12 +93,16 @@ def r200m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,wi
 def r200f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t200files[1]),16*mm,1*mm,width-((16+16)*mm),height-((1+1)*mm),mask="auto")
     canvas.drawImage(image,17*mm,3*mm,44*mm,29*mm,mask="auto")
-    canvas.setFillColor(HexColor("#FFFFFF"))
+    c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rect(218*mm,4*mm,40*mm,28*mm,fill=True,stroke=False)
     barcode.drawOn(canvas,219*mm,5*mm)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(85*mm,18.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -104,9 +114,11 @@ def r200f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,wi
 def r200s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t200files[2]),15*mm,1*mm,width-((15+15)*mm),height-((1+1)*mm),mask="auto")
     canvas.drawImage(image,16*mm,3*mm,44*mm,29*mm,mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(85*mm,18.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -115,12 +127,16 @@ def r200s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,wi
 def r1000m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t1000files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask="auto")
     canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,20*mm)
     canvas.drawString(12*mm,12*mm,title)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rotate(90)
     canvas.translate(190*mm,-303*mm)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
@@ -131,12 +147,16 @@ def r1000m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,w
 def r1000f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t1000files[1]),16*mm,6*mm,width-((16+16)*mm),height-((6+6)*mm),mask="auto")
     canvas.drawImage(image,18*mm,11*mm,51*mm,35*mm,mask="auto")
-    canvas.setFillColor(HexColor("#FFFFFF"))
+    c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rect(238*mm,14*mm,40*mm,28*mm,fill=True,stroke=False)
     barcode.drawOn(canvas,239*mm,15*mm)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(95*mm,33.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -148,9 +168,11 @@ def r1000f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,w
 def r1000s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
     canvas.drawImage(os.path.join(templatedir,t1000files[2]),15*mm,6*mm,width-((15+15)*mm),height-((6+6)*mm),mask="auto")
     canvas.drawImage(image,17*mm,11*mm,51*mm,35*mm,mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(95*mm,33.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -168,6 +190,10 @@ templates = {
 }
 
 def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,height,barcode,trafos):
+    oldStroke = shapes.STATE_DEFAULTS['strokeColor']
+    oldFill = shapes.STATE_DEFAULTS['fillColor']
+    shapes.STATE_DEFAULTS['strokeColor'] = None
+    shapes.STATE_DEFAULTS['fillColor'] = None
     templatedir = os.path.join(BASEDIR,"puzzles","templates",template,puzzletype)
 #    pdfmetrics.standardFonts = ()
 #    registerfont(os.path.join(templatedir,"font"),"Helvetica.afm","Helvetica.pfb",PUZZLEFONTPLAIN)
@@ -180,5 +206,6 @@ def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,h
     else:
         template = templates[template+"_"+puzzletype+"_light"]
     runtemplate(template,trafos,canvas,args,width,height)
-
+    shapes.STATE_DEFAULTS['strokeColor'] = oldStroke
+    shapes.STATE_DEFAULTS['fillColor'] = oldFill
 

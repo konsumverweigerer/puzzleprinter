@@ -25,6 +25,7 @@ from reportlab.lib.units import inch,cm,mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.graphics import barcode
+from reportlab.lib.colors import Color,HexColor
 
 logger = logging.getLogger(__name__)
 
@@ -48,14 +49,20 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if self._defaults:
             fp.write("[%s]\r\n" % DEFAULTSECT)
             for (key, value) in self._defaults.items():
-                fp.write(("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                try:
+                    fp.write(("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                except:
+                    print "could not write "+str(value)
             fp.write("\r\n")
         for section in self._sections:
             fp.write("[%s]\r\n" % section)
             for (key, value) in self._sections[section].items():
                 if key != "__name__":
-                    fp.write(("%s=%s\r\n" %
-                             (key, unicode(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                    try:
+                        fp.write(("%s=%s\r\n" %
+                                 (key, unicode(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                    except:
+                        print "could not write "+str(value)
             fp.write("\r\n")
 
 def send_file(uri,content,username=None,password=None):
@@ -79,6 +86,19 @@ def makebarcode(order_id,puzzle_id,reprint=""):
             t = "0"+t
         return PRINTERKN+t+"0"
     return ""
+
+def cleanuppdf(data):
+    (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+    (psfd,ps) = tempfile.mkstemp(suffix=".ps")
+    pdffd = os.fdopen(pdffd,'w')
+    pdffd.write(data)
+    pdffd.close()
+    os.system("pdf2ps %s %s"%(pdf,ps))
+    os.system("ps2pdf13 %s %s"%(ps,pdf))
+    data = open(pdf).read()
+    os.remove(ps)
+    os.remove(pdf)
+    return data
 
 class Order:
     order_id = ""
@@ -185,11 +205,13 @@ class Order:
         c.save()
 #        pdfmetrics.standardFonts = ()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
-        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName="NimbusSanL-Regu")
+        col = HexColor("#000000")
+        col.alpha = None
+        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName="NimbusSanL-Regu",textColor=col,barFillColor=col)
         templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
         c.showPage()
         c.save()
-        return (puzzleio.getvalue(),coverio.getvalue())
+        return (cleanuppdf(puzzleio.getvalue()),cleanuppdf(coverio.getvalue()))
 
     def makepreview(self):
         if "ODR"!=self.state:
@@ -264,7 +286,7 @@ class Order:
                 if directory:
                     open(os.path.join(directory,basename,additionalpdf),'w').write(self.additionaldata)
                 else:
-                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(self.additionaldata))
+                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(cleanuppdf(self.additionaldata)))
                     self.putfile(basename+"/"+additionalpdf,self.additionaldata)
                 data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
                 data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
@@ -278,8 +300,10 @@ class Order:
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
                 self.putfile(filename,dataio.getvalue())
+            return True
         except Exception,e:
             logging.warn("could not print "+self.order_id+" "+str(e))
+            return False
         finally:
             if not directory:
                 ftp.quit()
