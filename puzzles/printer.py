@@ -283,11 +283,12 @@ class Order:
 
             if self.additionaldata:
                 additionalpdf = "ADDITIONAL.PDF"
+                adddata = cleanuppdf(self.additionaldata)
                 if directory:
-                    open(os.path.join(directory,basename,additionalpdf),'w').write(self.additionaldata)
+                    open(os.path.join(directory,basename,additionalpdf),'w').write(adddata)
                 else:
-                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(cleanuppdf(self.additionaldata)))
-                    self.putfile(basename+"/"+additionalpdf,self.additionaldata)
+                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(adddata))
+                    self.putfile(basename+"/"+additionalpdf,adddata)
                 data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
                 data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
             dataio = StringIO.StringIO()
