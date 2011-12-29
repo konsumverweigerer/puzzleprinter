@@ -11,15 +11,27 @@ from boto.utils import fetch_file
 from PIL import Image
 
 from reportlab import rl_config
-rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
+rl_config.defaultGraphicsFontName = "Nimbus"
 rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
 rl_config.T1SearchPath.insert(0,os.path.join(BASEDIR,"puzzles","templates","font"))
-from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase import pdfmetrics,ttfonts
 #pdfmetrics.standardFonts = ()
 pdfmetrics.findFontAndRegister("NimbusSanL-Regu")
 pdfmetrics.findFontAndRegister("NimbusSanL-ReguItal")
+#pdfmetrics.findFontAndRegister("LinLibertine")
+#pdfmetrics.findFontAndRegister("LinLibertineI")
+#pdfmetrics.findFontAndRegister("GFSBodoni-Regular")
+#pdfmetrics.findFontAndRegister("GFSBodoni-Italic")
 #pdfmetrics.findFontAndRegister("Helvetica")
 #pdfmetrics.findFontAndRegister("Helvetica-Oblique")
+pdfmetrics.findFontAndRegister("LibrisADFStd-Regular")
+pdfmetrics.findFontAndRegister("LibrisADFStd-Italic")
+pdfmetrics.registerFont(ttfonts.TTFont("Verdana",os.path.join("puzzles","templates","font","verdana.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Verdana-Italic",os.path.join("puzzles","templates","font","verdanai.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Nimbus",os.path.join("puzzles","templates","font","nimbus.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Nimbus-Italic",os.path.join("puzzles","templates","font","nimbusi.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Regular",os.path.join("puzzles","templates","font","LiberationSans-Regular.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Italic",os.path.join("puzzles","templates","font","LiberationSans-Italic.ttf")))
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
 from reportlab.lib.utils import ImageReader
@@ -33,7 +45,7 @@ AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Del
 ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
 FINISHEDSTATUS = ("CheckedOut","Delivered")
 
-PDFPS = False
+POSTPROCESS = {"all":"gs"}
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
@@ -89,8 +101,13 @@ def makebarcode(order_id,puzzle_id,reprint=""):
         return PRINTERKN+t+"0"
     return ""
 
-def cleanuppdf(data):
-    if PDFPS:
+def cleanuppdf(data,v="all"):
+    pp = ""
+    if "all" in POSTPROCESS.keys():
+        pp = POSTPROCESS["all"]
+    if v in POSTPROCESS.keys():
+        pp = POSTPROCESS[v]
+    if pp=="ps2pdf":
         (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
         (psfd,ps) = tempfile.mkstemp(suffix=".ps")
         pdffd = os.fdopen(pdffd,'w')
@@ -98,6 +115,16 @@ def cleanuppdf(data):
         pdffd.close()
         os.system("pdf2ps %s %s"%(pdf,ps))
         os.system("ps2pdf13 %s %s"%(ps,pdf))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    elif pp=="gs":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".pdf")
+        psfd = os.fdopen(psfd,'w')
+        psfd.write(data)
+        psfd.close()
+        os.system("gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dCompatibilityLevel=1.3 -r1200 -sOutputFile=%s %s"%(pdf,ps))
         data = open(pdf).read()
         os.remove(ps)
         os.remove(pdf)
@@ -195,8 +222,14 @@ class Order:
         puzzle = ""
         puzzleio = StringIO.StringIO()
         coverio = StringIO.StringIO()
-        image = Image.open(StringIO.StringIO(self.getimage()))
-        imager = ImageReader(image)
+        (imfd,im) = tempfile.mkstemp(suffix=".jpg")
+        z = os.fdopen(imfd,'w')
+        z.write(self.getimage())
+        z.close()
+#        image = Image.open(StringIO.StringIO(self.getimage()))
+#        imager = ImageReader(image)
+        image = im
+        imager = im
         c = Canvas(puzzleio,pagesize=(dimensions[0]*mm,dimensions[1]*mm))
         if self.orientation=="horizontal":
             c.drawInlineImage(image,0,0,width=dimensions[0]*mm,height=dimensions[1]*mm)
@@ -210,11 +243,12 @@ class Order:
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
         col = HexColor("#000000")
         col.alpha = None
-        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName="NimbusSanL-Regu",textColor=col,barFillColor=col)
+        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName=rl_config.defaultGraphicsFontName,textColor=col,barFillColor=col)
         templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
         c.showPage()
         c.save()
-        return (cleanuppdf(puzzleio.getvalue()),cleanuppdf(coverio.getvalue()))
+        os.remove(im)
+        return (cleanuppdf(puzzleio.getvalue(),"puzzle"),cleanuppdf(coverio.getvalue(),"cover"))
 
     def makepreview(self):
         if "ODR"!=self.state:
@@ -286,7 +320,7 @@ class Order:
 
             if self.additionaldata:
                 additionalpdf = "ADDITIONAL.PDF"
-                adddata = cleanuppdf(self.additionaldata)
+                adddata = cleanuppdf(self.additionaldata,"additional")
                 if directory:
                     open(os.path.join(directory,basename,additionalpdf),'w').write(adddata)
                 else:
