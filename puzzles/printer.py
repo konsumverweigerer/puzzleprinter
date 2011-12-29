@@ -45,7 +45,10 @@ AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Del
 ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
 FINISHEDSTATUS = ("CheckedOut","Delivered")
 
-POSTPROCESS = {"all":"gs"}
+POSTPROCESS = { 
+    "all":"gs",
+    "additional":"gs14",
+}
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
@@ -118,6 +121,17 @@ def cleanuppdf(data,v="all"):
         data = open(pdf).read()
         os.remove(ps)
         os.remove(pdf)
+    elif pp=="pstopdf":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".ps")
+        pdffd = os.fdopen(pdffd,'w')
+        pdffd.write(data)
+        pdffd.close()
+        os.system("pdftops %s %s"%(pdf,ps))
+        os.system("ps2pdf13 %s %s"%(ps,pdf))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
     elif pp=="gs":
         (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
         (psfd,ps) = tempfile.mkstemp(suffix=".pdf")
@@ -125,6 +139,16 @@ def cleanuppdf(data,v="all"):
         psfd.write(data)
         psfd.close()
         os.system("gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dCompatibilityLevel=1.3 -r1200 -sOutputFile=%s %s"%(pdf,ps))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    elif pp=="gs14":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".pdf")
+        psfd = os.fdopen(psfd,'w')
+        psfd.write(data)
+        psfd.close()
+        os.system("gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dCompatibilityLevel=1.4 -r1200 -sOutputFile=%s %s"%(pdf,ps))
         data = open(pdf).read()
         os.remove(ps)
         os.remove(pdf)
