@@ -1,6 +1,7 @@
 from puzzlesettings import *
 
 from django.db import models
+
 import random,datetime,time,re
 
 def randid(t):

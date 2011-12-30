@@ -108,3 +108,9 @@ def endFullfillment(orderid,status=None):
         order.close()
     return order
 
+def deleteProduct(productid):
+    try:
+        shopify.Product.delete(productid)
+    except:
+        return False
+    return True

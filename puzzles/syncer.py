@@ -2,12 +2,13 @@ from puzzlesettings import *
 
 import models,printer,shop,mechanize
 
-import logging,StringIO,os
 from django.core.files.base import ContentFile
 from xhtml2pdf import document
 from pyPdf import pdf
 
+import logging,StringIO,os
 import string,sys
+import random,datetime,time,re
 reload(sys)
 
 COUNTRYMAP = {
@@ -451,11 +452,12 @@ def addprintstatus():
                         order.shopsync = "N"
                     if p.shipping_status and order.shipping_status=="N":
                         order.shipping_status = "S"
-                        #TODO: parse
                         t = p.shipping_status.split(";")
                         if len(t)>3:
                             order.shipping_type = t[1]
                             order.shipping_tracking = t[0]
+                        if not order.shipping_date:
+                            order.shipping_date = time.strftime("%Y-%m-%d %H:%M:%S")
                         order.shopsync = "N"
                     puzzle.save()
                     order.save()
@@ -477,6 +479,12 @@ def addbarcodes():
                 puzzle.save()
     finally:
         unlock("barcode")
+
+def pruneoldproducts():
+    orders = shop.deadOrders()
+    for order in orders:
+        productid = order[1].attributes["line_items"][0].attributes["product_id"]
+        shop.deleteProduct(productid)
 
 def addfulfillments():
     if not lock("fulfillments"):
