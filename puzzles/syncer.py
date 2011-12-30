@@ -484,7 +484,10 @@ def pruneoldproducts():
     orders = shop.deadOrders()
     for order in orders:
         productid = order[1].attributes["line_items"][0].attributes["product_id"]
-        shop.deleteProduct(productid)
+        if len(models.Puzzle.objects.filter(puzzle_id=productid))==0:
+            shop.deleteProduct(productid)
+        else:
+            print "not pruning used product "+str(productid)
 
 def addfulfillments():
     if not lock("fulfillments"):
