@@ -72,7 +72,11 @@ def sentOrders():
 def details(orderid,order=None):
     if not order:
         order = Order.get(int(orderid))
-    products = [(x,x["variants"][0]["option1"].split("|")) for x in [Product.get(p["product_id"]) for p in order["line_items"] if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x["variants"])==1]
+    try:
+        products = [(x,x["variants"][0]["option1"].split("|")) for x in [Product.get(p["product_id"]) for p in order["line_items"] if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x["variants"])==1]
+    except:
+        print "could not get product for "+str(order["id"])
+        products = []
     shipping = {}
     if "shipping_address" in order.keys():
         shipping = order["shipping_address"]
