@@ -75,6 +75,11 @@ class PuzzleAdmin(admin.ModelAdmin):
             syncer.previewpuzzle(obj)
         admin.ModelAdmin.save_model(self,request,obj,form,change)
 
+def make_abort(modeladmin,request,queryset):
+    queryset.update(order_status="A")
+    queryset.update(approval="N")
+make_abort.short_description = "Abort selected orders"
+
 def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
     queryset.update(approval_date = time.strftime("%Y-%m-%d %H:%M:%S"))
@@ -113,7 +118,7 @@ class OrderAdmin(admin.ModelAdmin):
     list_display = ["order_id","order_date","shipping_name","order_status","approval","touch_date"]
     ordering = ["order_date","shipping_name","touch_date"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
-    actions = [make_approved,make_closed,make_print,make_reprint]
+    actions = [make_approved,make_closed,make_print,make_reprint,make_abort]
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }

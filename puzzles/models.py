@@ -25,6 +25,7 @@ class Order(models.Model):
         (u"N", u"New"),
         (u"P", u"Processing"),
         (u"F", u"Finished"),
+        (u"A", u"Aborted"),
     )
     SHIPPING = (
         (u"N", u"New"),
