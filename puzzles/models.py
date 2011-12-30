@@ -48,6 +48,7 @@ class Order(models.Model):
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS,default="N")
     shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
+    shipping_email = models.CharField(max_length=255,blank=True,null=True)
     shipping_name = models.CharField(max_length=255)
     shipping_street = models.CharField(max_length=255)
     shipping_number = models.CharField(max_length=255)
