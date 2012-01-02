@@ -411,12 +411,15 @@ def printorder(order,force=False):
                 if puzzle.puzzle_template==t[0]:
                     p.template = t[1]
                     break
-            p.write()
-            if p.preview:
-                puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
-            if p.barcode:
-                puzzle.puzzle_barcode = p.barcode
-            puzzle.printing_status = "P"
+            try:
+                p.write()
+                if p.preview:
+                    puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+                if p.barcode:
+                    puzzle.puzzle_barcode = p.barcode
+                puzzle.printing_status = "P"
+            except Exception,e:
+                print "could not transfer puzzle "+p.barcode+" "str(e)
             puzzle.save()
     order.printsync = "S"
     order.order_status = "P"

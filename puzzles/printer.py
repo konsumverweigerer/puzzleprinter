@@ -362,10 +362,8 @@ class Order:
                 ftp.storbinary("STOR "+tmpname,StringIO.StringIO(dataio.getvalue()))
                 ftp.rename(tmpname,filename)
                 self.putfile(filename,dataio.getvalue())
-            return True
         except Exception,e:
             logging.warn("could not print "+self.order_id+" "+str(e))
-            return False
         finally:
             if not directory:
                 ftp.quit()
