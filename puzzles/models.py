@@ -97,6 +97,8 @@ class Puzzle(models.Model):
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
     puzzle_title = models.CharField(max_length=256,blank=True)
     puzzle_text = models.CharField(max_length=1000,blank=True)
+    reprint_number = models.IntegerField(null=True,blank=True,verbose_name="Reprint number")
+    reprint_reason = models.CharField(max_length=255,blank=True,null=True,verbose_name="Reprint reason")
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
     preview = models.ImageField(upload_to='preview',width_field="preview_width",height_field="preview_height",null=True,blank=True)
     preview_width = models.PositiveIntegerField(null=True,blank=True)

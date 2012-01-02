@@ -210,8 +210,13 @@ def previewpuzzle(puzzle,puzzle_id=None):
             s3 = image.image_s3
     if s3:
         p = printer.Order()
+        r = ""
         if order.reprint_number:
-            p.reprint = str(order.reprint_number)
+            r = r+str(order.reprint_number)
+        if puzzle.reprint_number:
+            r = r+str(puzzle.reprint_number)
+        if len(r)>0:
+            p.reprint = r
         p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
         p.puzzle_title = puzzle.puzzle_title
         p.puzzle_id = puzzle.puzzle_id
@@ -262,8 +267,13 @@ def previeworder(order,order_id=None):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -312,8 +322,13 @@ def printdemo(order,order_id=None,directory="/tmp"):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -360,8 +375,13 @@ def printorder(order,force=False):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -434,8 +454,13 @@ def addprintstatus():
                     print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
                     continue
             for puzzle in puzzles:
+                r = ""
                 if order.reprint_number:
-                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
+                    r = r+str(order.reprint_number)
+                if puzzle.reprint_number:
+                    r = r+str(puzzle.reprint_number)
+                if len(r)>0:
+                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id,r)
                 else:
                     bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
@@ -472,8 +497,13 @@ def addbarcodes():
         for puzzle in puzzles:
             if not puzzle.puzzle_barcode:
                 order = puzzle.order
+                r = ""
                 if order.reprint_number:
-                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
+                    r = r+str(order.reprint_number)
+                if puzzle.reprint_number:
+                    r = r+str(puzzle.reprint_number)
+                if len(r)>0:
+                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,r)
                 else:
                     puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 puzzle.save()
@@ -496,13 +526,15 @@ def addfulfillments():
         orders = models.Order.objects.filter(shopsync="N")
         for order in orders:
             if order.reprint_number:
-                break
+                continue
             if order.shipping_status=="S":
                 shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
                 order.order_status = "F"
             else:
                 puzzles = models.Puzzle.objects.filter(order=order)
                 for puzzle in puzzles:
+                    if puzzle.reprint_number:
+                        continue
                     if puzzle.printing_status=="F" or puzzle.printing_status=="P":
                         shop.startFullfillment(order.order_id)
                         break

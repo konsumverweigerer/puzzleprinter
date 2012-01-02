@@ -111,7 +111,7 @@ class OrderAdmin(admin.ModelAdmin):
             "fields":("order_date","shipping_date","approval_date"),
         }),
         ("Address", {
-            "fields":("shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
+            "fields":("shipping_email","shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
         }),
     )
     inlines = [ PuzzleInline ]
