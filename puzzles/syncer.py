@@ -419,7 +419,7 @@ def printorder(order,force=False):
                     puzzle.puzzle_barcode = p.barcode
                 puzzle.printing_status = "P"
             except Exception,e:
-                print "could not transfer puzzle "+p.barcode+" "str(e)
+                print "could not transfer puzzle "+p.barcode+" "+str(e)
             puzzle.save()
     order.printsync = "S"
     order.order_status = "P"
