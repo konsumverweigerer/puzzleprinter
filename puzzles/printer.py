@@ -284,9 +284,6 @@ class Order:
     def write(self,directory="/tmp/"):
         if "ODR"!=self.state:
             return
-        ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
-        if not ftp:
-            return
         try:
             basename = self.generatebarcode()
             filename = basename+"."+self.state
@@ -294,29 +291,8 @@ class Order:
             data = MyConfigParser()
             puzzlepdf = "I_"+basename+".PDF"
             coverpdf = "U_"+basename+".PDF"
-            if directory:
-                try:
-                    os.mkdir(os.path.join(directory,basename))
-                except:
-                    pass
-            else:
-                try:
-                    ftp.mkd(basename)
-                except:
-                    pass
             (puzzle,cover) = self.createpuzzle(basename)
             self.preview = self.createpreview(puzzle,cover)
-
-            if directory:
-                open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
-                open(os.path.join(directory,basename,coverpdf),'w').write(cover)
-            else:
-                ftp.cwd("/")
-                ftp.cwd(basename)
-                ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
-                ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
-                self.putfile(basename+"/"+puzzlepdf,puzzle)
-                self.putfile(basename+"/"+coverpdf,cover)
 
             data.add_section("Order")
             data.set("Order","CustomersShortName",PRINTERSN)
@@ -341,17 +317,46 @@ class Order:
             data.set("Book","Delivery0City",self.shipping_city)
             data.set("Book","Delivery0Country",self.shipping_country)
             data.set("Book","Delivery0ParcelService",self.shipping_provider)
-
             if self.additionaldata:
                 additionalpdf = "ADDITIONAL.PDF"
                 adddata = cleanuppdf(self.additionaldata,"additional")
+                data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
+                data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
+        except Exception,e:
+            logging.warn("could not render print "+self.order_id+" "+str(e))
+            return
+
+        ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
+        if not ftp:
+            return
+        try:
+            if directory:
+                try:
+                    os.mkdir(os.path.join(directory,basename))
+                except:
+                    pass
+            else:
+                try:
+                    ftp.mkd(basename)
+                except:
+                    pass
+            if directory:
+                open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
+                open(os.path.join(directory,basename,coverpdf),'w').write(cover)
+            else:
+                ftp.cwd("/")
+                ftp.cwd(basename)
+                ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
+                ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
+                self.putfile(basename+"/"+puzzlepdf,puzzle)
+                self.putfile(basename+"/"+coverpdf,cover)
+
+            if self.additionaldata:
                 if directory:
                     open(os.path.join(directory,basename,additionalpdf),'w').write(adddata)
                 else:
                     ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(adddata))
                     self.putfile(basename+"/"+additionalpdf,adddata)
-                data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
-                data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
             dataio = StringIO.StringIO()
             data.write(dataio)
             if directory:
