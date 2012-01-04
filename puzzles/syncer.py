@@ -120,6 +120,7 @@ def addneworder(order):
         neworder.total_lineitems = order[1]["total_price"]
         neworder.order_number = order[1]["order_number"]
         neworder.save()
+        barcodes = []
         for product in order[2]:
             prod = product[0]
             opt = product[1]
@@ -135,6 +136,7 @@ def addneworder(order):
             newpuzzle.printing_status = "N"
             newpuzzle.order = neworder
             newpuzzle.save()
+            barcodes.append(printer.makebarcode(neworder.order_id,newpuzzle.puzzle_id))
             newimage = models.Image()
             newimage.image_type = "P"
             newimage.image_s3 = opt[6]
@@ -143,6 +145,7 @@ def addneworder(order):
         sys.setdefaultencoding("utf8")
         order[4].attributes["note_attributes"] = {
             "invoiceid": neworder.id,
+            "barcodes": string.join(barcodes,","),
         }
         order[4].save()
         sys.setdefaultencoding("ascii")

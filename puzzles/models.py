@@ -88,6 +88,10 @@ class Puzzle(models.Model):
         (u"P", u"Processing"),
         (u"F", u"Finished"),
     )
+    COSTSTATUS = (
+        (u"N", u"Open"),
+        (u"A", u"Accounted"),
+    )
     puzzle_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify line item")
     puzzle_barcode = models.CharField(max_length=64,blank=True,null=True,verbose_name="Printer barcode")
     puzzle_status = models.CharField(max_length=255,blank=True,null=True,verbose_name="Printing status")
@@ -97,6 +101,8 @@ class Puzzle(models.Model):
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
     puzzle_title = models.CharField(max_length=256,blank=True)
     puzzle_text = models.CharField(max_length=1000,blank=True)
+    coststatus = models.CharField(max_length=64,blank=True,null=True,choices=COSTSTATUS)
+    cost = models.DecimalField(max_digits=12,decimal_places=2,default=0,null=True,verbose_name="Incurred cost")
     reprint_number = models.IntegerField(null=True,blank=True,verbose_name="Reprint number")
     reprint_reason = models.CharField(max_length=255,blank=True,null=True,verbose_name="Reprint reason")
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
