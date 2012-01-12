@@ -313,8 +313,12 @@ def previeworder(order,order_id=None):
             p.makepreview()
             if p.preview:
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+            else:
+                print "could not generate preview"
             if p.barcode:
                 puzzle.puzzle_barcode = p.barcode
+            else:
+                print "could not generate barcode"
             puzzle.save()
 
 def printdemo(order,order_id=None,directory="/tmp"):
