@@ -78,6 +78,7 @@ def syncall():
     addnewprints()
     addprintstatus()
     addfulfillments()
+    addbarcodes()
 
 def addneworders(force=False):
     if not lock("neworders"):
@@ -167,6 +168,7 @@ def makereprint(order,reprint_reason="Reprinting"):
         neworder.shipping_city = order.shipping_city
         neworder.shipping_country = order.shipping_country
         neworder.shipping_type = order.shipping_type
+        neworder.reprint_number = reprint_number
         neworder.shopsync = "S"
         neworder.printsync = "N" 
         neworder.total_lineitems = order.total_lineitems
@@ -188,6 +190,8 @@ def makereprint(order,reprint_reason="Reprinting"):
                 newimage.image_s3 = image.image_s3
                 newimage.puzzle = newpuzzle
                 newimage.save()
+        previeworder(neworder)
+        neworder.save()
     finally:
         unlock("newprints")
 

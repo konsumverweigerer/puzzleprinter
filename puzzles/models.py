@@ -118,7 +118,7 @@ class Image(models.Model):
         (u"O", u"Other"),
     )
     image_type = models.CharField(max_length=4,choices=IMAGETYPES)
-    image_s3 = models.CharField(max_length=255,unique=True)
+    image_s3 = models.CharField(max_length=255)
     puzzle = models.ForeignKey(Puzzle)
 
 class Lock(models.Model):
