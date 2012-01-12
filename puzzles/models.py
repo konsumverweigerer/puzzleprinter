@@ -48,7 +48,7 @@ class Order(models.Model):
     order_number = models.CharField(max_length=64,blank=True,null=True,verbose_name="Shopify Order number")
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS,default="N")
-    shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
+    shipping_id = models.CharField(max_length=64,default=randid("s"),verbose_name="Shopify Shipping id")
     shipping_email = models.CharField(max_length=255,blank=True,null=True)
     shipping_name = models.CharField(max_length=255)
     shipping_street = models.CharField(max_length=255)
@@ -92,7 +92,7 @@ class Puzzle(models.Model):
         (u"N", u"Open"),
         (u"A", u"Accounted"),
     )
-    puzzle_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify line item")
+    puzzle_id = models.CharField(max_length=64,default=randid("s"),verbose_name="Shopify line item")
     puzzle_barcode = models.CharField(max_length=64,blank=True,null=True,verbose_name="Printer barcode")
     puzzle_status = models.CharField(max_length=255,blank=True,null=True,verbose_name="Printing status")
     puzzle_type = models.CharField(max_length=64,choices=TYPES)
