@@ -159,6 +159,7 @@ def makereprint(order,reprint_reason="Reprinting"):
         while len(models.Order.objects.filter(order_id=order.order_id,reprint_number=reprint_number))>0:
             reprint_number = reprint_number+1
         neworder = models.Order(order_id=order.order_id,order_date=order.order_date,shipping_id=order.shipping_id)
+        neworder.order_number = order.order_number
         neworder.shipping_name = order.shipping_name
         neworder.shipping_street = order.shipping_street
         neworder.shipping_number = order.shipping_number
