@@ -234,6 +234,7 @@ class Order:
                 return t
             except:
                 d = d/2
+                print "retrying preview generation with res="+str(d)
         return None
 
     def createpuzzle(self,bc):
