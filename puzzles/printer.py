@@ -166,6 +166,7 @@ class Order:
     template = "std"
     orientation = "horizontal"
     color = "#665533"
+    count = 1
     shipping_name = ""
     shipping_street = ""
     shipping_number = ""
@@ -307,10 +308,10 @@ class Order:
             data.set("Book","CoverMd5",md5.md5(cover).hexdigest())
             data.set("Book","BookType",self.generatebooktype())
             data.set("Book","PageCount","1")
-            data.set("Book","BookCount","1")
+            data.set("Book","BookCount",str(self.count))
 
             data.set("Book","DeliveryAddressCount","1")
-            data.set("Book","Delivery0BookCount","1")
+            data.set("Book","Delivery0BookCount",str(self.count))
             data.set("Book","Delivery0Name",self.shipping_name)
             data.set("Book","Delivery0Street",self.shipping_street)
             data.set("Book","Delivery0HouseNumber",self.shipping_number)

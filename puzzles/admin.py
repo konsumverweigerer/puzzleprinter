@@ -35,10 +35,11 @@ class ImageInline(TabularInline):
 
 class PuzzleInline(StackedInline):
     model = models.Puzzle
-    readonly_fields = ["printing_status","puzzle_id","puzzle_barcode"]
+    readonly_fields = ["printing_status","puzzle_id","puzzle_barcode","count"]
     fieldsets = (
         (None,{
-            "fields":("preview","puzzle_type","puzzle_color","puzzle_title","puzzle_barcode"),
+            "fields":("preview","puzzle_type","puzzle_color","puzzle_title",
+                      "puzzle_barcode","count"),
         }),
         ("Status",{
             "fields":("printing_status",),
@@ -51,10 +52,11 @@ class PuzzleInline(StackedInline):
 
 class PuzzleAdmin(admin.ModelAdmin):
     search_fields = ["puzzle_title","puzzle_id","puzzle_barcode"]
-    readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode"]
+    readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode","count"]
     fieldsets = (
         (None,{
-            "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
+            "fields":("puzzle_type","puzzle_template","puzzle_orientation",
+                      "puzzle_color","puzzle_title","puzzle_text","count"),
         }),
         ("Status",{
             "fields":("printing_status","puzzle_status","puzzle_barcode"),
@@ -64,7 +66,8 @@ class PuzzleAdmin(admin.ModelAdmin):
         }),
     )
     inlines = [ImageInline]
-    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status","preview"]
+    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode",
+                    "puzzle_status","preview"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
     formfield_overrides = {
@@ -88,7 +91,7 @@ make_approved.short_description = "Mark selected orders as approved"
 def make_reprint(modeladmin,request,queryset):
     for order in queryset:
         syncer.makereprint(order)
-make_reprint.short_description = "Add an reprint order for selected"
+make_reprint.short_description = "Add a reprint order for selected"
 
 def make_closed(modeladmin,request,queryset):
     queryset.update(order_status="F",shopsync="S",printsync="S")

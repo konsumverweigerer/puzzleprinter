@@ -152,6 +152,35 @@ def addneworder(order):
         sys.setdefaultencoding("ascii")
         previeworder(neworder)
 
+def makepuzzlereprint(puzzle,reprint_reason="Reprinting"):
+    if not lock("newprints"):
+        return
+    try:
+        reprint_number = 1
+        while len(models.Puzzle.objects.filter(puzzle_id=puzzle.puzzle_id,reprint_number=reprint_number))>0:
+            reprint_number = reprint_number+1
+        newpuzzle = models.Puzzle(puzzle_id=puzzle.puzzle_id)
+        newpuzzle.puzzle_type = puzzle.puzzle_type
+        newpuzzle.puzzle_template = puzzle.puzzle_template
+        newpuzzle.puzzle_orientation = puzzle.puzzle_orientation
+        newpuzzle.puzzle_color = puzzle.puzzle_color
+        newpuzzle.puzzle_title = puzzle.puzzle_title
+        newpuzzle.puzzle_text = puzzle.puzzle_text
+        newpuzzle.printing_status = "N"
+        newpuzzle.order = puzzle.order
+        newpuzzle.reprint_number = reprint_number
+        newpuzzle.save()
+        for image in models.Image.objects.filter(puzzle=puzzle):
+            newimage = models.Image()
+            newimage.image_type = image.image_type
+            newimage.image_s3 = image.image_s3
+            newimage.puzzle = newpuzzle
+            newimage.save()
+        previewpuzzle(newpuzzle)
+        newpuzzle.save()
+    finally:
+        unlock("newprints")
+
 def makereprint(order,reprint_reason="Reprinting"):
     if not lock("newprints"):
         return
@@ -399,6 +428,7 @@ def printorder(order,force=False):
             p.puzzle_id = puzzle.puzzle_id
             p.puzzle_type = puzzle.puzzle_type
             p.order_id = order.order_id
+            p.count = puzzle.count
             p.shipping_name = order.shipping_name
             p.shipping_street = order.shipping_street
             p.shipping_number = order.shipping_number
@@ -540,10 +570,9 @@ def addfulfillments():
     try:
         orders = models.Order.objects.filter(shopsync="N")
         for order in orders:
-            if order.reprint_number:
-                continue
             if order.shipping_status=="S":
-                shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
+                if order.reprint_number:
+                    shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
                 order.order_status = "F"
             else:
                 puzzles = models.Puzzle.objects.filter(order=order)
