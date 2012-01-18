@@ -50,6 +50,11 @@ class PuzzleInline(StackedInline):
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }
 
+def make_puzzlereprint(modeladmin,request,queryset):
+    for order in queryset:
+        syncer.makepuzzlereprint(order)
+make_puzzlereprint.short_description = "Add a reprint puzzle for selected"
+
 class PuzzleAdmin(admin.ModelAdmin):
     search_fields = ["puzzle_title","puzzle_id","puzzle_barcode"]
     readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode","count"]
@@ -73,6 +78,7 @@ class PuzzleAdmin(admin.ModelAdmin):
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminImageWidget}
     }
+    actions = [make_puzzlereprint]
     def save_model(self,request,obj,form,change):
         if obj.printing_status=='N' or not obj.preview:
             syncer.previewpuzzle(obj)
