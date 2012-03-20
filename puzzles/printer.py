@@ -32,6 +32,7 @@ pdfmetrics.registerFont(ttfonts.TTFont("Nimbus",os.path.join("puzzles","template
 pdfmetrics.registerFont(ttfonts.TTFont("Nimbus-Italic",os.path.join("puzzles","templates","font","nimbusi.ttf")))
 pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Regular",os.path.join("puzzles","templates","font","LiberationSans-Regular.ttf")))
 pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Italic",os.path.join("puzzles","templates","font","LiberationSans-Italic.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Helvetica",os.path.join("puzzles","templates","font","Helvetica.ttf")))
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
 from reportlab.lib.utils import ImageReader
