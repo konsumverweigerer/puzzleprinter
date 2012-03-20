@@ -125,6 +125,7 @@ def addneworder(order):
         for product in order[2]:
             prod = product[0]
             opt = product[1]
+            quantity = product[2]
             newpuzzle = models.Puzzle(puzzle_id=prod["id"])
             for t in PUZZLETABLE:
                 if t[0]==opt[2]:
@@ -135,6 +136,7 @@ def addneworder(order):
             newpuzzle.puzzle_title = opt[1]
             newpuzzle.puzzle_text = ""
             newpuzzle.printing_status = "N"
+            newpuzzle.count = quantity
             newpuzzle.order = neworder
             newpuzzle.save()
             barcodes.append(printer.makebarcode(neworder.order_id,newpuzzle.puzzle_id))
