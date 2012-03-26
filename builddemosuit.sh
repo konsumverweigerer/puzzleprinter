@@ -4,7 +4,7 @@ VERTICALPIC="s3://puzzle-live/puzzle/images/print/puzzle_01010101-0101-0101-0101
 HORIZONTALPIC="s3://puzzle-live/puzzle/images/print/puzzle_01010101-0101-0101-0101010101010100.jpg"
 
 ./printpuzzle.py -o1434334 -p17676766 -d/tmp/ -s200 --image="${HORIZONTALPIC}" -h --title="Ein äußerst schönes Puzzle" --color="#333333"
-./printpuzzle.py -o1434334 -p17676766 -d/tmp/ -s200 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#333333"
+./printpuzzle.py -o1434331 -p17676761 -d/tmp/ -s200 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#333333"
 #./printpuzzle.py -o2434334 -p27676766 -d/tmp/ -s200 --image="${VERTICALPIC}" --title="1 äußerst schönes Puzzle" --color="#FFFFFF"
 #./printpuzzle.py -o3434334 -p37676766 -d/tmp/ -s200 --image="${VERTICALPIC}" --title="Ein äußerst schönes Puzzle" --color="#7D0E19"
 #./printpuzzle.py -o4434334 -p47676766 -d/tmp/ -s200 --image="${VERTICALPIC}" --title="1 äußerst schönes Puzzle" --color="#DD5B78"
