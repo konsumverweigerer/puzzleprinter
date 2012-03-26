@@ -72,8 +72,8 @@ def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcod
     canvas.setFillColor(color)
     canvas.rect(0,0,width,height,fill=True,stroke=False)
 
-t200files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
-t1000files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
+t200files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png", "light_v_bg.png", "light_v_f.png", "light_v_s.png")
+t1000files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png", "light_v_bg.png", "light_v_f.png", "light_v_s.png")
 
 def colordark(color):
     if colors.colorDistance(HexColor(color),HexColor("#000000"))<1.25:
