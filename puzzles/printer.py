@@ -180,6 +180,7 @@ class Order:
     shipping_status = None
     preview = None
     barcode = None
+    debug = False
 
     def finished(self):
         if self.printing_status:
@@ -271,7 +272,7 @@ class Order:
         col = HexColor("#000000")
         col.alpha = None
         bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName=rl_config.defaultGraphicsFontName,textColor=col,barFillColor=col)
-        templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
+        templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos,self.debug)
         c.showPage()
         c.save()
         os.remove(im)

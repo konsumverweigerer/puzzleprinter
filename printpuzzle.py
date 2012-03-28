@@ -2,7 +2,7 @@
 from puzzles import printer
 import os,sys,getopt
 
-options = getopt.gnu_getopt(sys.argv[1:],"o:p:d:s:vh",["image=","title=","color=","help"])
+options = getopt.gnu_getopt(sys.argv[1:],"o:p:d:s:vhq",["image=","title=","color=","help"])
 
 orientation = "horizontal"
 directory = "/tmp"
@@ -12,12 +12,15 @@ image = "s3://puzzle-live/puzzle/images/print/puzzle_01010101-0101-0101-01010101
 title = "Dein Titel"
 color = "#FFFFFF"
 puzzlesize = "1000"
+debug = False
 
 for t in options[0]:
     if t[0]=="-o":
         orderid = t[1]
     if t[0]=="-p":
         puzzleid = t[1]
+    if t[0]=="-q":
+        debug = True
     if t[0]=="-h":
         orientation = "horizontal"
     if t[0]=="-v":
