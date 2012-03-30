@@ -44,5 +44,5 @@ if orderid=="1" or puzzleid=="1":
     sys.exit(0)
 
 print "rendering puzzle order: %s,%s,%s,%s,%s,%s in %s"%(orderid,puzzleid,image,title,color,puzzlesize,directory)
-barcode = printer.demo(directory,image,title,color=color,puzzle_type=puzzlesize,orientation=orientation,orderid=orderid,puzzleid=puzzleid)
+barcode = printer.demo(directory,image,title,color=color,puzzle_type=puzzlesize,orientation=orientation,orderid=orderid,puzzleid=puzzleid,debug=debug)
 print "rendered barcode %s"%(barcode)

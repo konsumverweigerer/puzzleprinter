@@ -472,7 +472,7 @@ def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",color="
     order.shipping_country = address["country"]
     order.write(directory=directory)
 
-def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="2153432",puzzleid="837642"):
+def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="2153432",puzzleid="837642",debug=False):
     order = Order()
     order.puzzle_s3 = s3
     order.puzzle_title = title
@@ -485,6 +485,7 @@ def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="215343
     order.shipping_city = "Bad Musterstadt"
     order.shipping_country = "Deutschland"
     order.shipping_provider = "DHL"
+    order.debug = debug
     if color:
         order.color = color
     if orientation:

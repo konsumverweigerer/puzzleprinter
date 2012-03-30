@@ -7,8 +7,10 @@ DEBUG=1
 if [ "$DEBUG" = "1" ]; then
         ./printpuzzle.py -o1334334 -p17676766 -d/tmp/ -s200 --image="${HORIZONTALPIC}" -h --title="Ein äußerst schönes Puzzle" --color="#333333" -q
         ./printpuzzle.py -o1334331 -p17676761 -d/tmp/ -s200 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#333333" -q
+        ./printpuzzle.py -o5434334 -p57676766 -d/tmp/ -s500 --image="${HORIZONTALPIC}" -h --title="Ein äußerst schönes Puzzle" --color="#FF8E1D" -q
+        ./printpuzzle.py -o5434331 -p57676761 -d/tmp/ -s500 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#FF8E1D" -q
         ./printpuzzle.py -o9334334 -p07676766 -d/tmp/ -s1000 --image="${HORIZONTALPIC}" -h --title="Ein äußerst schönes Puzzle" --color="#003E6F" -q
-        ./printpuzzle.py -o9334331 -p07676761 -d/tmp/ -s1000 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#003E6F"-q
+        ./printpuzzle.py -o9334331 -p07676761 -d/tmp/ -s1000 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#003E6F" -q
 else
         ./printpuzzle.py -o1434334 -p17676766 -d/tmp/ -s200 --image="${HORIZONTALPIC}" -h --title="Ein äußerst schönes Puzzle" --color="#333333"
         ./printpuzzle.py -o1434331 -p17676761 -d/tmp/ -s200 --image="${VERTICALPIC}" -v --title="Ein äußerst schönes Puzzle" --color="#333333"

@@ -66,7 +66,7 @@ def runtemplate(template,trafos,canvas,args,width,height,debug=False):
             args[9] = height*mm
             renderpart(canvas,t[1],list(args))
 
-def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
+def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
     color = HexColor(color)
     color.alpha = None
     canvas.setFillColor(color)
@@ -297,7 +297,7 @@ def r1000s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,w
         canvas.drawImage(os.path.join(templatedir,t200files[7]),79*mm,33.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
         canvas.drawImage(os.path.join(templatedir,t200files[8]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
         canvas.drawImage(image,(22+1)*mm,(10+1)*mm,((height-((10+10)*mm))/r)-((1+1)*mm),height-((11+11)*mm),mask=[0,0,0,0,0,0])
-    c = HexColor("#000000")
+    c = HexColor("#aaaaaa")
     if colordark(color):
         c = HexColor("#FFFFFF")
     c.alpha = None
@@ -334,6 +334,7 @@ def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,h
         template = templates[template+"_"+puzzletype+"_dark"]
     else:
         template = templates[template+"_"+puzzletype+"_light"]
+    print "rendering cover", debug
     runtemplate(template,trafos,canvas,args,width,height,debug)
     shapes.STATE_DEFAULTS['strokeColor'] = oldStroke
     shapes.STATE_DEFAULTS['fillColor'] = oldFill
