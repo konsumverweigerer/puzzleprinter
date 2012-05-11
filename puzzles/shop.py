@@ -76,7 +76,7 @@ def details(orderid,order=None):
         products = [(x[0],x[0]["variants"][0]["option1"].split("|"),x[1]) 
                     for x in [(Product.get(p["product_id"]),p["quantity"]) 
                               for p in order["line_items"] 
-                              if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x["variants"])==1]
+                              if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x[0]["variants"])==1]
     except:
         print "could not get product for "+str(order["id"])
         products = []
