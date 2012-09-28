@@ -575,6 +575,8 @@ def addfulfillments():
             if order.shipping_status=="S":
                 if order.reprint_number:
                     shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
+                else:
+                    shop.startFullfillment(order.order_id)
                 order.order_status = "F"
             else:
                 puzzles = models.Puzzle.objects.filter(order=order)
