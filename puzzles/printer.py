@@ -446,6 +446,7 @@ def readorders(ext=['FLT','ACC'],barcodes=[]):
             status.append(t)
         for fn in [x for x in files if x[-3:] in ext]:
             v = StringIO.StringIO()
+            logging.info("reading "+fn)
             ftp.retrbinary("RETR "+fn,lambda x:v.write(x))
             o = Order.fromFile(fn,v.getvalue(),status)
             if o.barcode in barcodes:
