@@ -431,6 +431,8 @@ def readorders(ext=['FLT','ACC'],barcodes=[]):
         statuslist = [x for x in files if x.endswith(".STA")]
         statuslist.sort(reverse=True)
         status = []
+        if len(statuslist)>30:
+            statuslist = statuslist[0:30]
         for fn in statuslist:
             statusio = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:statusio.write(x))
