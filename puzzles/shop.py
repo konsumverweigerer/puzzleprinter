@@ -59,7 +59,7 @@ ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIF
 
 def openOrders(since_id=None,financial_status="paid"):
     orders = [(details(0,order=x.to_dict()),x) for x in Order.find(limit=250,financial_status=financial_status,since_id=since_id) if x.attributes["fulfillment_status"]==None]
-    logging.info("have "+len(orders)+" orders from shopify")
+    logging.info("have %s orders from shopify"%(len(orders)))
     return [(x[0][0],x[0][1],x[0][2],x[0][3],x[1]) for x in orders if len(x[0][2])>0]
 
 def deadOrders(financial_status="abandoned"):
