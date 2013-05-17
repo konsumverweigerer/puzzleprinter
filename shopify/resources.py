@@ -1,50 +1,7 @@
-import pyactiveresource.util
-from pyactiveresource.activeresource import ActiveResource
-import shopify.yamlobjects
+from shopify.base import ShopifyResource
 import shopify.mixins as mixins
 import base64
 import re
-
-class ShopifyResource(ActiveResource, mixins.Countable):
-    _primary_key = "id"
-
-    def __init__(self, attributes=None, prefix_options=None):
-        if attributes is not None and prefix_options is None:
-            prefix_options, attributes = self.__class__._split_options(attributes)
-        return super(ShopifyResource, self).__init__(attributes, prefix_options)
-
-    def is_new(self):
-        return not self.id
-
-    def _load_attributes_from_response(self, response):
-        self._update(self.__class__.format.decode(response.body))
-
-    def encode(self, options):
-        # pyactiveresource (version 1.0.1) doesn't support encoding to_json
-        return pyactiveresource.util.to_xml(options)
-
-    def __get_primary_key(self):
-        return self._primary_key
-
-    def __set_primary_key(self, value):
-        self._primary_key = value
-
-    primary_key = property(__get_primary_key, __set_primary_key, None,
-                           'Primary key to identity the resource (defaults to "id")')
-
-    def __get_id(self):
-        if self._primary_key != "id":
-            return getattr(self, self._primary_key)
-        else:
-            return super(ShopifyResource, self).__getattr__("id")
-
-    def __set_id(self, value):
-        if self._primary_key != "id":
-            return setattr(self, self._primary_key, value)
-        else:
-            return super(ShopifyResource, self).__setattr__("id", value)
-
-    id = property(__get_id, __set_id, None, 'Value stored in the primary key')
 
 class Shop(ShopifyResource):
     @classmethod
@@ -64,7 +21,7 @@ class Shop(ShopifyResource):
         return Event.find()
 
 
-class CustomCollection(ShopifyResource):
+class CustomCollection(ShopifyResource, mixins.Metafields, mixins.Events):
     def products(self):
         return Product.find(collection_id=self.id)
 
@@ -77,7 +34,7 @@ class CustomCollection(ShopifyResource):
             collect.destroy()
 
 
-class SmartCollection(ShopifyResource):
+class SmartCollection(ShopifyResource, mixins.Metafields, mixins.Events):
     def products(self):
         return Product.find(collection_id=self.id)
 
@@ -106,15 +63,15 @@ class NoteAttribute(ShopifyResource):
     pass
 
 
-class Order(ShopifyResource):
+class Order(ShopifyResource, mixins.Metafields, mixins.Events):
     def close(self):
-        self._load_attributes_from_response(self.post("close", self.only_id()))
+        self._load_attributes_from_response(self.post("close"))
 
     def open(self):
-        self._load_attributes_from_response(self.post("open", self.only_id()))
+        self._load_attributes_from_response(self.post("open"))
 
     def cancel(self, **kwargs):
-        self._load_attributes_from_response(self.post("cancel", self.only_id()), **kwargs)
+        self._load_attributes_from_response(self.post("cancel", **kwargs))
 
     def transactions(self):
         return Transaction.find(order_id=self.id)
@@ -122,18 +79,15 @@ class Order(ShopifyResource):
     def capture(self, amount=""):
         return Transaction.create(amount=amount, kind="capture", order_id=self.id)
 
-    def only_id(self):
-        return self.encode(dict(only="id", include=[], methods=[], fields=[]))
 
-
-class Product(ShopifyResource):
+class Product(ShopifyResource, mixins.Metafields, mixins.Events):
     def price_range(self):
         prices = [variant.price for variant in self.variants]
         f = "%0.2f"
         min_price = min(prices)
         max_price = max(prices)
         if min_price != max_price:
-            return "%f - %f" % (f % min_price, f % max_price)
+            return "%s - %s" % (f % min_price, f % max_price)
         else:
             return f % min_price
 
@@ -150,7 +104,7 @@ class Product(ShopifyResource):
         return collection.remove_product(self)
 
 
-class Variant(ShopifyResource):
+class Variant(ShopifyResource, mixins.Metafields):
     _prefix_source = "/admin/products/$product_id/"
 
     @classmethod
@@ -164,7 +118,7 @@ class Image(ShopifyResource):
 
     def __getattr__(self, name):
         if name in ["pico", "icon", "thumb", "small", "compact", "medium", "large", "grande", "original"]:
-            return re.sub(r"/(.*)\.(\w{2,4})", r"\1_%s.\2" % (name), self.src)
+            return re.sub(r"/(.*)\.(\w{2,4})", r"/\1_%s.\2" % (name), self.src)
         else:
             return super(Image, self).__getattr__(name)
 
@@ -186,16 +140,16 @@ class Country(ShopifyResource):
     pass
 
 
-class Page(ShopifyResource):
+class Page(ShopifyResource, mixins.Metafields, mixins.Events):
     pass
 
 
-class Blog(ShopifyResource):
+class Blog(ShopifyResource, mixins.Metafields, mixins.Events):
     def articles(self):
         return Article.find(blog_id=self.id)
 
 
-class Article(ShopifyResource):
+class Article(ShopifyResource, mixins.Metafields, mixins.Events):
     _prefix_source = "/admin/blogs/$blog_id/"
 
     def comments(self):
@@ -212,22 +166,19 @@ class Metafield(ShopifyResource):
 
 class Comment(ShopifyResource):
     def remove(self):
-        self._load_attributes_from_response(self.post("remove", self.only_id()))
+        self._load_attributes_from_response(self.post("remove"))
 
     def spam(self):
-        self._load_attributes_from_response(self.post("spam", self.only_id()))
+        self._load_attributes_from_response(self.post("spam"))
 
     def approve(self):
-        self._load_attributes_from_response(self.post("approve", self.only_id()))
+        self._load_attributes_from_response(self.post("approve"))
 
     def restore(self):
-        self._load_attributes_from_response(self.post("restore", self.only_id()))
+        self._load_attributes_from_response(self.post("restore"))
 
     def not_spam(self):
-        self._load_attributes_from_response(self.post("not_spam", self.only_id()))
-
-    def only_id(self):
-        return self.encode(dict(only="id"))
+        self._load_attributes_from_response(self.post("not_spam"))
 
 
 class Province(ShopifyResource):
@@ -239,7 +190,13 @@ class Redirect(ShopifyResource):
 
 
 class Webhook(ShopifyResource):
-    pass
+    def __get_format(self):
+        return self.attributes.get("format")
+
+    def __set_format(self, data):
+        self.attributes["format"] = data
+
+    format = property(__get_format, __set_format, None, "Format attribute")
 
 
 class Event(ShopifyResource):
@@ -250,12 +207,33 @@ class Event(ShopifyResource):
         return "/admin/" if options.get("resource") is None else "/admin/%s/%s/" % (options["resource"], options["resource_id"])
 
 
-class Customer(ShopifyResource):
-    pass
+class Customer(ShopifyResource, mixins.Metafields):
+    @classmethod
+    def search(cls, **kwargs):
+        """Search for customers matching supplied query
+
+        Args:
+           q: Text to search for customers ("q" is short for query)
+           f: Filters to apply to customers ("f" is short for query)
+           page: Page to show (default: 1)
+           limit: Maximum number of results to show (default: 50, maximum: 250)
+        Returns:
+           An array of customers.
+        """
+        return cls._build_list(cls.get("search", **kwargs))
 
 
 class CustomerGroup(ShopifyResource):
-    pass
+    def customers(cls, **kwargs):
+        """Get a list of customers matching a customer group
+
+        Args:
+           page: Page to show (default: 1)
+           limit: Maximum number of results to show (default: 50, maximum: 250)
+        Returns:
+           An array of customers.
+        """
+        return Customer._build_list(cls.get("customers", **kwargs))
 
 
 class Theme(ShopifyResource):
@@ -281,7 +259,7 @@ class Asset(ShopifyResource):
     def find(cls, key=None, **kwargs):
         """Find an asset by key
         E.g.
-            ShopifyAPI::Asset.find('layout/theme.liquid', theme_id=99)
+            shopify.Asset.find('layout/theme.liquid', theme_id=99)
         """
         if not key:
             return super(Asset, cls).find(**kwargs)
@@ -289,7 +267,10 @@ class Asset(ShopifyResource):
         params.update(kwargs)
         theme_id = params.get("theme_id")
         path_prefix = "/admin/themes/%s" % (theme_id) if theme_id else "/admin"
-        return cls.find_one("%s/assets.%s" % (path_prefix, cls.format.extension), **params)
+        resource = cls.find_one("%s/assets.%s" % (path_prefix, cls.format.extension), **params)
+        if theme_id and resource:
+            resource._prefix_options["theme_id"] = theme_id
+        return resource
 
     def __get_value(self):
         data = self.attributes.get("value")
@@ -300,7 +281,8 @@ class Asset(ShopifyResource):
             return base64.b64decode(data)
 
     def __set_value(self, data):
-        self.attach(data)
+        self.__wipe_value_attributes()
+        self.attributes["value"] = data
 
     value = property(__get_value, __set_value, None, "The asset's value or attachment")
 
@@ -322,7 +304,7 @@ class Asset(ShopifyResource):
 
     def __wipe_value_attributes(self):
         for attr in ("value", "attachment", "src", "source_key"):
-            if hasattr(self.attributes, attr):
+            if self.attributes.has_key(attr):
                 del self.attributes[attr]
 
 
@@ -379,13 +361,3 @@ class Rule(ShopifyResource):
 # attribute of Order
 class TaxLine(ShopifyResource):
     pass
-
-
-METAFIELD_ENABLED_CLASSES = (Order, Product, CustomCollection, SmartCollection, Page, Blog, Article, Variant)
-EVENT_ENABLED_CLASSES = (Order, Product, CustomCollection, SmartCollection, Page, Blog, Article)
-
-for cls in METAFIELD_ENABLED_CLASSES:
-    cls.__bases__ += (mixins.Metafields,)
-
-for cls in EVENT_ENABLED_CLASSES:
-    cls.__bases__ += (mixins.Events,)
