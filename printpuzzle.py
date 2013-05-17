@@ -2,8 +2,9 @@
 from puzzles import printer
 import os,sys,getopt
 
-options = getopt.gnu_getopt(sys.argv[1:],"o:p:d:s:",["image=","title=","color=","help"])
+options = getopt.gnu_getopt(sys.argv[1:],"o:p:d:s:vhq",["image=","title=","color=","help"])
 
+orientation = "horizontal"
 directory = "/tmp"
 orderid = "1"
 puzzleid = "1"
@@ -11,12 +12,19 @@ image = "s3://puzzle-live/puzzle/images/print/puzzle_01010101-0101-0101-01010101
 title = "Dein Titel"
 color = "#FFFFFF"
 puzzlesize = "1000"
+debug = False
 
 for t in options[0]:
     if t[0]=="-o":
         orderid = t[1]
     if t[0]=="-p":
         puzzleid = t[1]
+    if t[0]=="-q":
+        debug = True
+    if t[0]=="-h":
+        orientation = "horizontal"
+    if t[0]=="-v":
+        orientation = "vertical"
     if t[0]=="-d":
         if "ftp" == t[1]:
             directory = None
@@ -36,5 +44,5 @@ if orderid=="1" or puzzleid=="1":
     sys.exit(0)
 
 print "rendering puzzle order: %s,%s,%s,%s,%s,%s in %s"%(orderid,puzzleid,image,title,color,puzzlesize,directory)
-barcode = printer.demo(directory,image,title,color=color,puzzle_type=puzzlesize,orderid=orderid,puzzleid=puzzleid)
+barcode = printer.demo(directory,image,title,color=color,puzzle_type=puzzlesize,orientation=orientation,orderid=orderid,puzzleid=puzzleid,debug=debug)
 print "rendered barcode %s"%(barcode)

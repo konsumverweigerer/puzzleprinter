@@ -35,10 +35,11 @@ class ImageInline(TabularInline):
 
 class PuzzleInline(StackedInline):
     model = models.Puzzle
-    readonly_fields = ["printing_status","puzzle_id","puzzle_barcode"]
+    readonly_fields = ["printing_status","puzzle_id","puzzle_barcode","count"]
     fieldsets = (
         (None,{
-            "fields":("preview","puzzle_type","puzzle_color","puzzle_title","puzzle_barcode"),
+            "fields":("preview","puzzle_type","puzzle_color","puzzle_title",
+                      "puzzle_barcode","count"),
         }),
         ("Status",{
             "fields":("printing_status",),
@@ -49,11 +50,18 @@ class PuzzleInline(StackedInline):
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }
 
+def make_puzzlereprint(modeladmin,request,queryset):
+    for order in queryset:
+        syncer.makepuzzlereprint(order)
+make_puzzlereprint.short_description = "Add a reprint puzzle for selected"
+
 class PuzzleAdmin(admin.ModelAdmin):
-    readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode"]
+    search_fields = ["puzzle_title","puzzle_id","puzzle_barcode"]
+    readonly_fields = ["puzzle_id","puzzle_status","puzzle_barcode","count"]
     fieldsets = (
         (None,{
-            "fields":("puzzle_type","puzzle_template","puzzle_orientation","puzzle_color","puzzle_title","puzzle_text"),
+            "fields":("puzzle_type","puzzle_template","puzzle_orientation",
+                      "puzzle_color","puzzle_title","puzzle_text","count"),
         }),
         ("Status",{
             "fields":("printing_status","puzzle_status","puzzle_barcode"),
@@ -63,20 +71,33 @@ class PuzzleAdmin(admin.ModelAdmin):
         }),
     )
     inlines = [ImageInline]
-    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode","puzzle_status"]
+    list_display = ["puzzle_id","puzzle_type","puzzle_title","puzzle_barcode",
+                    "puzzle_status","preview"]
     ordering = ["puzzle_type","puzzle_title","printing_status"]
     list_filter = ["puzzle_type","puzzle_template","printing_status"]
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminImageWidget}
     }
+    actions = [make_puzzlereprint]
     def save_model(self,request,obj,form,change):
-        syncer.previewpuzzle(obj)
+        if obj.printing_status=='N' or not obj.preview:
+            syncer.previewpuzzle(obj)
         admin.ModelAdmin.save_model(self,request,obj,form,change)
+
+def make_abort(modeladmin,request,queryset):
+    queryset.update(order_status="A")
+    queryset.update(approval="N")
+make_abort.short_description = "Abort selected orders"
 
 def make_approved(modeladmin,request,queryset):
     queryset.update(approval="A")
     queryset.update(approval_date = time.strftime("%Y-%m-%d %H:%M:%S"))
 make_approved.short_description = "Mark selected orders as approved"
+
+def make_reprint(modeladmin,request,queryset):
+    for order in queryset:
+        syncer.makereprint(order)
+make_reprint.short_description = "Add a reprint order for selected"
 
 def make_closed(modeladmin,request,queryset):
     queryset.update(order_status="F",shopsync="S",printsync="S")
@@ -89,24 +110,24 @@ def make_print(modeladmin,request,queryset):
 make_print.short_description = "Print selected orders"
 
 class OrderAdmin(admin.ModelAdmin):
-    search_fields = ["shipping_name","order_id"]
-    readonly_fields = ["order_id","shipping_id","shopsync","printsync","order_date","touch_date","shipping_date","approval_date"]
+    search_fields = ["shipping_name","order_id","order_number"]
+    readonly_fields = ["order_id","shipping_id","shopsync","printsync","order_date","touch_date","shipping_date","approval_date","reprint_number","reprint_reason","order_number"]
     fieldsets = (
         (None, {
-            "fields":("order_id","shipping_id"),
+            "fields":("order_id","shipping_id","reprint_number","reprint_reason","order_number"),
         }),
         ("Timestamps", {
             "fields":("order_date","shipping_date","approval_date"),
         }),
         ("Address", {
-            "fields":("shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
+            "fields":("shipping_email","shipping_name","shipping_street","shipping_number","shipping_zipcode","shipping_city","shipping_country")
         }),
     )
     inlines = [ PuzzleInline ]
     list_display = ["order_id","order_date","shipping_name","order_status","approval","touch_date"]
     ordering = ["order_date","shipping_name","touch_date"]
     list_filter = ["order_status","shipping_status","shopsync","printsync","approval"]
-    actions = [make_approved,make_closed,make_print]
+    actions = [make_approved,make_closed,make_print,make_reprint,make_abort]
     formfield_overrides = {
         models.models.ImageField: {"widget": AdminPreviewWidget}
     }

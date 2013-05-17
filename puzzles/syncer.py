@@ -2,12 +2,13 @@ from puzzlesettings import *
 
 import models,printer,shop,mechanize
 
-import logging,StringIO,os
 from django.core.files.base import ContentFile
 from xhtml2pdf import document
 from pyPdf import pdf
 
+import logging,StringIO,os
 import string,sys
+import random,datetime,time,re
 reload(sys)
 
 COUNTRYMAP = {
@@ -73,22 +74,29 @@ def unlock(name):
 
 def syncall():
     addneworders()
+    addneworders(True)
     addnewprints()
     addprintstatus()
     addfulfillments()
+    addbarcodes()
 
-def addneworders():
+def addneworders(force=False):
     if not lock("neworders"):
         return
     try:
-        since_id = None
-        v = models.Order.objects.order_by('-id')[0:1].get() 
-        if v:
-            since_id = v.order_id
-        print "searching orders since: "+str(since_id)
-        neworders = shop.openOrders(since_id=since_id)
-        for order in neworders:
-            addneworder(order)
+        if force:
+            neworders = shop.openOrders()
+            for order in neworders:
+                addneworder(order)
+        else:
+            since_id = None
+            v = models.Order.objects.order_by('-id')[0:1].get() 
+            if v:
+                since_id = v.order_id
+            print "searching orders since: "+str(since_id)
+            neworders = shop.openOrders(since_id=since_id)
+            for order in neworders:
+                addneworder(order)
     finally:
         unlock("neworders")
 
@@ -109,11 +117,15 @@ def addneworder(order):
         neworder.shipping_type = "DHL"
         neworder.shopsync = "S" 
         neworder.printsync = "N" 
+        neworder.approval = "N" 
         neworder.total_lineitems = order[1]["total_price"]
+        neworder.order_number = order[1]["order_number"]
         neworder.save()
+        barcodes = []
         for product in order[2]:
             prod = product[0]
             opt = product[1]
+            quantity = product[2]
             newpuzzle = models.Puzzle(puzzle_id=prod["id"])
             for t in PUZZLETABLE:
                 if t[0]==opt[2]:
@@ -124,8 +136,10 @@ def addneworder(order):
             newpuzzle.puzzle_title = opt[1]
             newpuzzle.puzzle_text = ""
             newpuzzle.printing_status = "N"
+            newpuzzle.count = quantity
             newpuzzle.order = neworder
             newpuzzle.save()
+            barcodes.append(printer.makebarcode(neworder.order_id,newpuzzle.puzzle_id))
             newimage = models.Image()
             newimage.image_type = "P"
             newimage.image_s3 = opt[6]
@@ -134,10 +148,83 @@ def addneworder(order):
         sys.setdefaultencoding("utf8")
         order[4].attributes["note_attributes"] = {
             "invoiceid": neworder.id,
+            "barcodes": string.join(barcodes,","),
         }
         order[4].save()
         sys.setdefaultencoding("ascii")
         previeworder(neworder)
+
+def makepuzzlereprint(puzzle,reprint_reason="Reprinting"):
+    if not lock("newprints"):
+        return
+    try:
+        reprint_number = 1
+        while len(models.Puzzle.objects.filter(puzzle_id=puzzle.puzzle_id,reprint_number=reprint_number))>0:
+            reprint_number = reprint_number+1
+        newpuzzle = models.Puzzle(puzzle_id=puzzle.puzzle_id)
+        newpuzzle.puzzle_type = puzzle.puzzle_type
+        newpuzzle.puzzle_template = puzzle.puzzle_template
+        newpuzzle.puzzle_orientation = puzzle.puzzle_orientation
+        newpuzzle.puzzle_color = puzzle.puzzle_color
+        newpuzzle.puzzle_title = puzzle.puzzle_title
+        newpuzzle.puzzle_text = puzzle.puzzle_text
+        newpuzzle.printing_status = "N"
+        newpuzzle.order = puzzle.order
+        newpuzzle.reprint_number = reprint_number
+        newpuzzle.save()
+        for image in models.Image.objects.filter(puzzle=puzzle):
+            newimage = models.Image()
+            newimage.image_type = image.image_type
+            newimage.image_s3 = image.image_s3
+            newimage.puzzle = newpuzzle
+            newimage.save()
+        previewpuzzle(newpuzzle)
+        newpuzzle.save()
+    finally:
+        unlock("newprints")
+
+def makereprint(order,reprint_reason="Reprinting"):
+    if not lock("newprints"):
+        return
+    try:
+        reprint_number = 1
+        while len(models.Order.objects.filter(order_id=order.order_id,reprint_number=reprint_number))>0:
+            reprint_number = reprint_number+1
+        neworder = models.Order(order_id=order.order_id,order_date=order.order_date,shipping_id=order.shipping_id)
+        neworder.order_number = order.order_number
+        neworder.shipping_name = order.shipping_name
+        neworder.shipping_street = order.shipping_street
+        neworder.shipping_number = order.shipping_number
+        neworder.shipping_zipcode = order.shipping_zipcode
+        neworder.shipping_city = order.shipping_city
+        neworder.shipping_country = order.shipping_country
+        neworder.shipping_type = order.shipping_type
+        neworder.reprint_number = reprint_number
+        neworder.shopsync = "S"
+        neworder.printsync = "N" 
+        neworder.total_lineitems = order.total_lineitems
+        neworder.save()
+        for puzzle in models.Puzzle.objects.filter(order=order):
+            newpuzzle = models.Puzzle(puzzle_id=puzzle.puzzle_id)
+            newpuzzle.puzzle_type = puzzle.puzzle_type
+            newpuzzle.puzzle_template = puzzle.puzzle_template
+            newpuzzle.puzzle_orientation = puzzle.puzzle_orientation
+            newpuzzle.puzzle_color = puzzle.puzzle_color
+            newpuzzle.puzzle_title = puzzle.puzzle_title
+            newpuzzle.puzzle_text = puzzle.puzzle_text
+            newpuzzle.printing_status = "N"
+            newpuzzle.order = neworder
+            newpuzzle.save()
+            for image in models.Image.objects.filter(puzzle=puzzle):
+                newimage = models.Image()
+                newimage.image_type = image.image_type
+                newimage.image_s3 = image.image_s3
+                newimage.puzzle = newpuzzle
+                newimage.save()
+        previeworder(neworder)
+        neworder.save()
+    finally:
+        unlock("newprints")
 
 def printorders(orders):
     if not lock("newprints"):
@@ -162,8 +249,13 @@ def previewpuzzle(puzzle,puzzle_id=None):
             s3 = image.image_s3
     if s3:
         p = printer.Order()
+        r = ""
         if order.reprint_number:
-            p.reprint = str(order.reprint_number)
+            r = r+str(order.reprint_number)
+        if puzzle.reprint_number:
+            r = r+str(puzzle.reprint_number)
+        if len(r)>0:
+            p.reprint = r
         p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
         p.puzzle_title = puzzle.puzzle_title
         p.puzzle_id = puzzle.puzzle_id
@@ -201,12 +293,12 @@ def previewpuzzle(puzzle,puzzle_id=None):
 
 def previeworder(order,order_id=None):
     if order_id and not order:
-        t = models.Order.objects.filter(order_id=order_id)
-        if len(t)>0:
-            order = t[0]
-    print "preview for "+str(order)
+        orders = models.Order.objects.filter(order_id=order_id)
+        for order in orders:
+            previeworder(order)
     if not order:
         return
+    print "preview for "+str(order)
     for puzzle in models.Puzzle.objects.filter(order=order):
         s3 = None
         for image in models.Image.objects.filter(puzzle=puzzle):
@@ -214,8 +306,13 @@ def previeworder(order,order_id=None):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -247,8 +344,12 @@ def previeworder(order,order_id=None):
             p.makepreview()
             if p.preview:
                 puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+            else:
+                print "could not generate preview"
             if p.barcode:
                 puzzle.puzzle_barcode = p.barcode
+            else:
+                print "could not generate barcode"
             puzzle.save()
 
 def printdemo(order,order_id=None,directory="/tmp"):
@@ -264,8 +365,13 @@ def printdemo(order,order_id=None,directory="/tmp"):
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
@@ -304,19 +410,27 @@ def printorder(order,force=False):
         if order.printsync!="N" or order.approval!="A":
             return
     for puzzle in models.Puzzle.objects.filter(order=order):
+        if puzzle.printing_status!="N" and not force:
+            continue
         s3 = None
         for image in models.Image.objects.filter(puzzle=puzzle):
             if image.image_type=="P":
                 s3 = image.image_s3
         if s3:
             p = printer.Order()
+            r = ""
             if order.reprint_number:
-                p.reprint = str(order.reprint_number)
+                r = r+str(order.reprint_number)
+            if puzzle.reprint_number:
+                r = r+str(puzzle.reprint_number)
+            if len(r)>0:
+                p.reprint = r
             p.puzzle_s3 = "s3://"+AWSBUCKET+AWSPATH+s3
             p.puzzle_title = puzzle.puzzle_title
             p.puzzle_id = puzzle.puzzle_id
             p.puzzle_type = puzzle.puzzle_type
             p.order_id = order.order_id
+            p.count = puzzle.count
             p.shipping_name = order.shipping_name
             p.shipping_street = order.shipping_street
             p.shipping_number = order.shipping_number
@@ -341,12 +455,15 @@ def printorder(order,force=False):
                 if puzzle.puzzle_template==t[0]:
                     p.template = t[1]
                     break
-            p.write()
-            if p.preview:
-                puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
-            if p.barcode:
-                puzzle.puzzle_barcode = p.barcode
-            puzzle.printing_status = "P"
+            try:
+                p.write()
+                if p.preview:
+                    puzzle.preview.save("%s.jpg"%(puzzle.puzzle_id),ContentFile(p.preview),save=False)
+                if p.barcode:
+                    puzzle.puzzle_barcode = p.barcode
+                puzzle.printing_status = "P"
+            except Exception,e:
+                print "could not transfer puzzle "+p.barcode+" "+str(e)
             puzzle.save()
     order.printsync = "S"
     order.order_status = "P"
@@ -384,8 +501,13 @@ def addprintstatus():
                     print "could not find order for "+str(p.order_id)+" "+str(p.barcode)
                     continue
             for puzzle in puzzles:
+                r = ""
                 if order.reprint_number:
-                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
+                    r = r+str(order.reprint_number)
+                if puzzle.reprint_number:
+                    r = r+str(puzzle.reprint_number)
+                if len(r)>0:
+                    bc = printer.makebarcode(order.order_id,puzzle.puzzle_id,r)
                 else:
                     bc = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 if bc==p.barcode:
@@ -402,11 +524,12 @@ def addprintstatus():
                         order.shopsync = "N"
                     if p.shipping_status and order.shipping_status=="N":
                         order.shipping_status = "S"
-                        #TODO: parse
                         t = p.shipping_status.split(";")
                         if len(t)>3:
                             order.shipping_type = t[1]
                             order.shipping_tracking = t[0]
+                        if not order.shipping_date:
+                            order.shipping_date = time.strftime("%Y-%m-%d %H:%M:%S")
                         order.shopsync = "N"
                     puzzle.save()
                     order.save()
@@ -421,13 +544,27 @@ def addbarcodes():
         for puzzle in puzzles:
             if not puzzle.puzzle_barcode:
                 order = puzzle.order
+                r = ""
                 if order.reprint_number:
-                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,str(order.reprint_number))
+                    r = r+str(order.reprint_number)
+                if puzzle.reprint_number:
+                    r = r+str(puzzle.reprint_number)
+                if len(r)>0:
+                    puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id,r)
                 else:
                     puzzle.puzzle_barcode = printer.makebarcode(order.order_id,puzzle.puzzle_id)
                 puzzle.save()
     finally:
         unlock("barcode")
+
+def pruneoldproducts():
+    orders = shop.deadOrders()
+    for order in orders:
+        productid = order[1].attributes["line_items"][0].attributes["product_id"]
+        if len(models.Puzzle.objects.filter(puzzle_id=productid))==0:
+            shop.deleteProduct(productid)
+        else:
+            print "not pruning used product "+str(productid)
 
 def addfulfillments():
     if not lock("fulfillments"):
@@ -435,14 +572,17 @@ def addfulfillments():
     try:
         orders = models.Order.objects.filter(shopsync="N")
         for order in orders:
-            if order.reprint_number:
-                break
             if order.shipping_status=="S":
-                shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
+                if order.reprint_number:
+                    shop.updateFullfillment(order.order_id,tracking_company=order.shipping_type,tracking_number=order.shipping_tracking)
+                else:
+                    shop.startFullfillment(order.order_id)
                 order.order_status = "F"
             else:
                 puzzles = models.Puzzle.objects.filter(order=order)
                 for puzzle in puzzles:
+                    if puzzle.reprint_number:
+                        continue
                     if puzzle.printing_status=="F" or puzzle.printing_status=="P":
                         shop.startFullfillment(order.order_id)
                         break

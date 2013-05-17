@@ -9,7 +9,7 @@ from reportlab.pdfgen.canvas import Canvas
 from reportlab.lib.styles import getSampleStyleSheet
 from reportlab.platypus import Paragraph, Frame
 from reportlab.lib.utils import ImageReader
-from reportlab.graphics import barcode
+from reportlab.graphics import barcode,shapes
 from reportlab.lib.colors import Color,HexColor
 from PIL import Image
 
@@ -22,9 +22,19 @@ PUZZLESIZES = {
     "1000":"ca. 65,7x47,7cm",
 }
 
-PUZZLEFONTPLAIN = "NimbusSanL-Regu"
+#PUZZLEFONTPLAIN = "LibrisADFStd-Regular"
+#PUZZLEFONTPLAIN = "GFSBodoni-Regular"
+#PUZZLEFONTPLAIN = "LinLibertine"
+#PUZZLEFONTPLAIN = "NimbusSanL-Regu"
+#PUZZLEFONTPLAIN = "Verdana"
+PUZZLEFONTPLAIN = "Nimbus"
 #PUZZLEFONTPLAIN = "Helvetica"
-PUZZLEFONTOBLIQUE = "NimbusSanL-ReguItal"
+#PUZZLEFONTOBLIQUE = "LibrisADFStd-Italic"
+#PUZZLEFONTOBLIQUE = "GFSBodoni-Italic"
+#PUZZLEFONTOBLIQUE = "LinLibertineI"
+#PUZZLEFONTOBLIQUE = "NimbusSanL-ReguItal"
+#PUZZLEFONTOBLIQUE = "Verdana-Italic"
+PUZZLEFONTOBLIQUE = "LiberationSans-Italic"
 #PUZZLEFONTOBLIQUE = "Helvetica-Oblique"
 
 def registerfont(folder,afm,pfb,name):
@@ -36,7 +46,7 @@ def registerfont(folder,afm,pfb,name):
     justFont = pdfmetrics.Font(name,faceName,'WinAnsiEncoding')
     pdfmetrics.registerFont(justFont)
 
-def renderpart(canvas,renderfk,args,trafo=None):
+def renderpart(canvas,renderfk,args,trafo=None,debug=False):
     canvas.saveState()
     if trafo:
         canvas.rotate(trafo[0])
@@ -44,7 +54,7 @@ def renderpart(canvas,renderfk,args,trafo=None):
     apply(renderfk,args)
     canvas.restoreState()
 
-def runtemplate(template,trafos,canvas,args,width,height):
+def runtemplate(template,trafos,canvas,args,width,height,debug=False):
     for t in template:
         if t[0]:
             trafo = trafos[t[0]]
@@ -56,43 +66,105 @@ def runtemplate(template,trafos,canvas,args,width,height):
             args[9] = height*mm
             renderpart(canvas,t[1],list(args))
 
-def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.setFillColor(HexColor(color))
+def fillcolor(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    color = HexColor(color)
+    color.alpha = None
+    canvas.setFillColor(color)
     canvas.rect(0,0,width,height,fill=True,stroke=False)
 
-t200files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
-t1000files = ("light_h_bg.png", "light_h_f.png", "light_h_s.png")
+t200files = (
+    "light_h_bg.png", "light_h_f.png", "light_h_s.png",
+    "light_h_f_bg.png", "light_h_f_p.png", "light_h_f_b.png",
+    "light_h_s_bg.png", "light_h_s_p.png", "light_h_s_b.png",
+    "light_v_bg.png", "light_v_f.png", "light_v_s.png",
+    "light_v_f_bg.png", "light_v_f_p.png", "light_v_f_b.png",
+    "light_v_s_bg.png", "light_v_s_p.png", "light_v_s_b.png"
+)
+t500files = t200files
+t1000files = (
+    "light_h_bg.png", "light_h_f.png", "light_h_s.png", 
+    "light_h_f_bg.png", "light_h_f_p.png", "light_h_f_b.png",
+    "light_h_s_bg.png", "light_h_s_p.png", "light_h_s_b.png",
+    "light_v_bg.png", "light_v_f.png", "light_v_s.png",
+    "light_v_f_bg.png", "light_v_f_p.png", "light_v_f_b.png",
+    "light_v_s_bg.png", "light_v_s_p.png", "light_v_s_b.png"
+)
 
 def colordark(color):
     if colors.colorDistance(HexColor(color),HexColor("#000000"))<1.25:
         return True
     return False
 
-def r200m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t200files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask="auto")
-    canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+def r200m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        canvas.drawImage(os.path.join(templatedir,t200files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        canvas.drawImage(os.path.join(templatedir,t200files[0]),12*mm,21*mm,width-((12+36)*mm),height-((32+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.rotate(90)
+        canvas.drawImage(image,25.5*mm,-17*mm-(width-((17+69)*mm)),height-((36.5+13.5)*mm),width-((17+69)*mm),mask=[0,0,0,0,0,0])
+        canvas.rotate(-90)
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
-    canvas.setFont(PUZZLEFONTPLAIN,20*mm)
-    canvas.drawString(12*mm,12*mm,title)
-    canvas.setFillColor(HexColor("#000000"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    if orientation=='horizontal':
+        canvas.setFillColor(c)
+        canvas.setFont(PUZZLEFONTPLAIN,20*mm)
+        canvas.drawString(12*mm,12*mm,title)
+    elif orientation=='vertical':
+        canvas.setFillColor(c)
+        canvas.setFont(PUZZLEFONTPLAIN,15*mm)
+        canvas.rotate(90)
+        canvas.drawString(12*mm,-307*mm,title)
+        canvas.rotate(-90)
+    c = HexColor("#000000")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rotate(90)
     canvas.translate(156*mm,-280*mm)
-    canvas.setFont(PUZZLEFONTPLAIN,12*mm)
-    canvas.drawString(19*mm,9*mm,puzzletype)
-    canvas.setFont(PUZZLEFONTPLAIN,6*mm)
-    canvas.drawString(0,0,PUZZLESIZES[puzzletype])
+    if orientation=='horizontal':
+        canvas.setFont(PUZZLEFONTPLAIN,12*mm)
+        canvas.drawString(19*mm,9*mm,puzzletype)
+        canvas.setFont(PUZZLEFONTPLAIN,6*mm)
+        canvas.drawString(0,0,PUZZLESIZES[puzzletype])
+    elif orientation=='vertical':
+        canvas.setFont(PUZZLEFONTPLAIN,12*mm)
+        canvas.drawString(8*mm,9*mm,puzzletype)
+        canvas.setFont(PUZZLEFONTPLAIN,6*mm)
+        canvas.drawString(-11*mm,0,PUZZLESIZES[puzzletype])
 
-def r200f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t200files[1]),16*mm,1*mm,width-((16+16)*mm),height-((1+1)*mm),mask="auto")
-    canvas.drawImage(image,17*mm,3*mm,44*mm,29*mm,mask="auto")
-    canvas.setFillColor(HexColor("#FFFFFF"))
+def r200f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        r = 544.0/400.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[3]),16*mm,1*mm,(height-((1+1)*mm))*r,height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[4]),69*mm,18.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[5]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(16+1)*mm,(1+1)*mm,((height-((1+1)*mm))*r)-((1+1)*mm),height-((2+2)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        r = 544.0/400.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[12]),19*mm,1*mm,(height-((1+1)*mm))/r,height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[13]),69*mm,18.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[14]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(19+1)*mm,(1+1)*mm,((height-((1+1)*mm))/r)-((1+1)*mm),height-((2+2)*mm),mask=[0,0,0,0,0,0])
+    c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rect(218*mm,4*mm,40*mm,28*mm,fill=True,stroke=False)
     barcode.drawOn(canvas,219*mm,5*mm)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(85*mm,18.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -101,42 +173,104 @@ def r200f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,wi
     canvas.drawString(137*mm,9*mm,PUZZLEPRINTERURL)
     canvas.drawString(137*mm,16*mm,PUZZLEPRINTERSLOGAN)
 
-def r200s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t200files[2]),15*mm,1*mm,width-((15+15)*mm),height-((1+1)*mm),mask="auto")
-    canvas.drawImage(image,16*mm,3*mm,44*mm,29*mm,mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+def r200s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        r = 544.0/400.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[6]),15*mm,1*mm,(height-((1+1)*mm))*r,height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[7]),69*mm,18.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[8]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(15+1)*mm,(1+1)*mm,((height-((1+1)*mm))*r)-((1+1)*mm),height-((2+2)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        r = 544.0/400.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[15]),18*mm,1*mm,(height-((1+1)*mm))/r,height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[16]),69*mm,18.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[17]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(18+1)*mm,(1+1)*mm,((height-((1+1)*mm))/r)-((1+1)*mm),height-((2+2)*mm),mask=[0,0,0,0,0,0])
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(85*mm,18.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
     canvas.drawString(69*mm,6*mm,PUZZLESIZES[puzzletype])
 
-def r1000m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t1000files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask="auto")
-    canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+def r1000m(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        canvas.drawImage(os.path.join(templatedir,t1000files[0]),12*mm,32*mm,width-((12+36)*mm),height-((32+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,17*mm,36.5*mm,width-((17+69)*mm),height-((36.5+13.5)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        canvas.drawImage(os.path.join(templatedir,t1000files[0]),12*mm,21*mm,width-((12+36)*mm),height-((32+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.rotate(90)
+        canvas.drawImage(image,25.5*mm,-17*mm-(width-((17+69)*mm)),height-((36.5+13.5)*mm),width-((17+69)*mm),mask=[0,0,0,0,0,0])
+        canvas.rotate(-90)
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
-    canvas.setFont(PUZZLEFONTPLAIN,20*mm)
-    canvas.drawString(12*mm,12*mm,title)
-    canvas.setFillColor(HexColor("#000000"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    if orientation=='horizontal':
+        canvas.setFillColor(c)
+        canvas.setFont(PUZZLEFONTPLAIN,20*mm)
+        canvas.drawString(12*mm,12*mm,title)
+    elif orientation=='vertical':
+        canvas.setFillColor(c)
+        canvas.setFont(PUZZLEFONTPLAIN,15*mm)
+        canvas.rotate(90)
+        canvas.drawString(12*mm,-332*mm,title)
+        canvas.rotate(-90)
+    c = HexColor("#000000")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rotate(90)
     canvas.translate(190*mm,-303*mm)
-    canvas.setFont(PUZZLEFONTPLAIN,12*mm)
-    canvas.drawString(19*mm,9*mm,puzzletype)
-    canvas.setFont(PUZZLEFONTPLAIN,6*mm)
-    canvas.drawString(0,0,PUZZLESIZES[puzzletype])
+    if orientation=='horizontal':
+        canvas.setFont(PUZZLEFONTPLAIN,12*mm)
+        canvas.drawString(19*mm,9*mm,puzzletype)
+        canvas.setFont(PUZZLEFONTPLAIN,6*mm)
+        canvas.drawString(0,0,PUZZLESIZES[puzzletype])
+    elif orientation=='vertical':
+        canvas.setFont(PUZZLEFONTPLAIN,12*mm)
+        canvas.drawString(8*mm,9*mm,puzzletype)
+        canvas.setFont(PUZZLEFONTPLAIN,6*mm)
+        canvas.drawString(-11*mm,0,PUZZLESIZES[puzzletype])
 
-def r1000f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t1000files[1]),16*mm,6*mm,width-((16+16)*mm),height-((6+6)*mm),mask="auto")
-    canvas.drawImage(image,18*mm,11*mm,51*mm,35*mm,mask="auto")
-    canvas.setFillColor(HexColor("#FFFFFF"))
+def r1000f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        r = 717.0/527.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t1000files[3]),16*mm,10*mm,(height-((10+10)*mm))*r,height-((10+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t1000files[4]),79*mm,33.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t1000files[5]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(16+1)*mm,(10+1)*mm,((height-((10+10)*mm))*r)-((1+1)*mm),height-((11+11)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        r = 717.0/527.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t1000files[12]),23*mm,10*mm,(height-((10+10)*mm))/r,height-((10+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t1000files[13]),79*mm,33.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t1000files[14]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(23+1)*mm,(10+1)*mm,((height-((10+10)*mm))/r)-((1+1)*mm),height-((11+11)*mm),mask=[0,0,0,0,0,0])
+    c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.rect(238*mm,14*mm,40*mm,28*mm,fill=True,stroke=False)
     barcode.drawOn(canvas,239*mm,15*mm)
-    canvas.setFillColor(HexColor("#000000"))
+    c = HexColor("#000000")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(95*mm,33.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -145,12 +279,29 @@ def r1000f(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,w
     canvas.drawString(143*mm,23*mm,PUZZLEPRINTERURL)
     canvas.drawString(143*mm,30*mm,PUZZLEPRINTERSLOGAN)
 
-def r1000s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height):
-    canvas.drawImage(os.path.join(templatedir,t1000files[2]),15*mm,6*mm,width-((15+15)*mm),height-((6+6)*mm),mask="auto")
-    canvas.drawImage(image,17*mm,11*mm,51*mm,35*mm,mask="auto")
-    canvas.setFillColor(HexColor("#000000"))
+def r1000s(puzzletype,templatedir,canvas,orientation,color,image,title,barcode,width,height,debug=False):
+    if debug:
+        canvas.setFillColor(HexColor("#aaaaaa"))
+        canvas.rect(0,0,width,height,stroke=0,fill=1)
+    if orientation=='horizontal':
+        r = 717.0/527.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[6]),15*mm,10*mm,(height-((10+10)*mm))*r,height-((10+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[7]),79*mm,33.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[8]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(15+1)*mm,(10+1)*mm,((height-((10+10)*mm))*r)-((1+1)*mm),height-((11+11)*mm),mask=[0,0,0,0,0,0])
+    elif orientation=='vertical':
+        r = 717.0/527.0
+        q = 162.0/107.0
+        canvas.drawImage(os.path.join(templatedir,t200files[6]),22*mm,10*mm,(height-((10+10)*mm))/r,height-((10+10)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[7]),79*mm,33.5*mm,9*mm*q,9*mm,mask=[0,0,0,0,0,0])
+        canvas.drawImage(os.path.join(templatedir,t200files[8]),width-(height-((1+1)*mm)),1*mm,height-((1+1)*mm),height-((1+1)*mm),mask=[0,0,0,0,0,0])
+        canvas.drawImage(image,(22+1)*mm,(10+1)*mm,((height-((10+10)*mm))/r)-((1+1)*mm),height-((11+11)*mm),mask=[0,0,0,0,0,0])
+    c = HexColor("#aaaaaa")
     if colordark(color):
-        canvas.setFillColor(HexColor("#FFFFFF"))
+        c = HexColor("#FFFFFF")
+    c.alpha = None
+    canvas.setFillColor(c)
     canvas.setFont(PUZZLEFONTPLAIN,12*mm)
     canvas.drawString(95*mm,33.5*mm,puzzletype)
     canvas.setFont(PUZZLEFONTPLAIN,6*mm)
@@ -167,18 +318,24 @@ templates = {
     "std_1000_dark":((None,fillcolor),("m",r1000m),("b",r1000f),("r",r1000s),("t",r1000f),("l",r1000s)),
 }
 
-def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,height,barcode,trafos):
+def rendercover(puzzletype,template,orientation,color,canvas,image,title,width,height,barcode,trafos,debug=False):
+    oldStroke = shapes.STATE_DEFAULTS['strokeColor']
+    oldFill = shapes.STATE_DEFAULTS['fillColor']
+    shapes.STATE_DEFAULTS['strokeColor'] = None
+    shapes.STATE_DEFAULTS['fillColor'] = None
     templatedir = os.path.join(BASEDIR,"puzzles","templates",template,puzzletype)
 #    pdfmetrics.standardFonts = ()
 #    registerfont(os.path.join(templatedir,"font"),"Helvetica.afm","Helvetica.pfb",PUZZLEFONTPLAIN)
 #    registerfont(os.path.join(templatedir,"font"),"Helvetica_Oblique.afm","Helvetica.pfb",PUZZLEFONTOBLIQUE)
 #    pdfmetrics.findFontAndRegister("Helvetica").face.addObjects(canvas._doc)
 #    pdfmetrics.findFontAndRegister("Helvetica-Oblique").face.addObjects(canvas._doc)
-    args = [puzzletype,templatedir,canvas,orientation,color,image,title,barcode,0,0]
+    args = [puzzletype,templatedir,canvas,orientation,color,image,title,barcode,0,0,debug]
     if colordark(color):
         template = templates[template+"_"+puzzletype+"_dark"]
     else:
         template = templates[template+"_"+puzzletype+"_light"]
-    runtemplate(template,trafos,canvas,args,width,height)
-
+    print "rendering cover", debug
+    runtemplate(template,trafos,canvas,args,width,height,debug)
+    shapes.STATE_DEFAULTS['strokeColor'] = oldStroke
+    shapes.STATE_DEFAULTS['fillColor'] = oldFill
 

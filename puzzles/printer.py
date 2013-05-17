@@ -11,26 +11,45 @@ from boto.utils import fetch_file
 from PIL import Image
 
 from reportlab import rl_config
-rl_config.defaultGraphicsFontName = "NimbusSanL-Regu"
+rl_config.defaultGraphicsFontName = "Nimbus"
 rl_config.canvas_basefontname = rl_config.defaultGraphicsFontName
 rl_config.T1SearchPath.insert(0,os.path.join(BASEDIR,"puzzles","templates","font"))
-from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase import pdfmetrics,ttfonts
 #pdfmetrics.standardFonts = ()
 pdfmetrics.findFontAndRegister("NimbusSanL-Regu")
 pdfmetrics.findFontAndRegister("NimbusSanL-ReguItal")
+#pdfmetrics.findFontAndRegister("LinLibertine")
+#pdfmetrics.findFontAndRegister("LinLibertineI")
+#pdfmetrics.findFontAndRegister("GFSBodoni-Regular")
+#pdfmetrics.findFontAndRegister("GFSBodoni-Italic")
 #pdfmetrics.findFontAndRegister("Helvetica")
 #pdfmetrics.findFontAndRegister("Helvetica-Oblique")
+pdfmetrics.findFontAndRegister("LibrisADFStd-Regular")
+pdfmetrics.findFontAndRegister("LibrisADFStd-Italic")
+pdfmetrics.registerFont(ttfonts.TTFont("Verdana",os.path.join("puzzles","templates","font","verdana.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Verdana-Italic",os.path.join("puzzles","templates","font","verdanai.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Nimbus",os.path.join("puzzles","templates","font","nimbus.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Nimbus-Italic",os.path.join("puzzles","templates","font","nimbusi.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Regular",os.path.join("puzzles","templates","font","LiberationSans-Regular.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("LiberationSans-Italic",os.path.join("puzzles","templates","font","LiberationSans-Italic.ttf")))
+pdfmetrics.registerFont(ttfonts.TTFont("Helvetica",os.path.join("puzzles","templates","font","Helvetica.ttf")))
 from reportlab.lib import colors
 from reportlab.lib.units import inch,cm,mm
 from reportlab.lib.utils import ImageReader
 from reportlab.pdfgen.canvas import Canvas
 from reportlab.graphics import barcode
+from reportlab.lib.colors import Color,HexColor
 
 logger = logging.getLogger(__name__)
 
 AVAILSTATUS = ("OrderAcquired","PdfTransferred","InProduction","CheckedOut","Delivered")
 ACCEPTEDSTATUS = ("InProduction","CheckedOut","Delivered")
 FINISHEDSTATUS = ("CheckedOut","Delivered")
+
+POSTPROCESS = { 
+    "all":"gs",
+    "additional":"gs14",
+}
 
 class MyConfigParser(ConfigParser.SafeConfigParser):
     def optionxform(self, optionstr):
@@ -48,14 +67,20 @@ class MyConfigParser(ConfigParser.SafeConfigParser):
         if self._defaults:
             fp.write("[%s]\r\n" % DEFAULTSECT)
             for (key, value) in self._defaults.items():
-                fp.write(("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                try:
+                    fp.write(("%s=%s\r\n" % (key, str(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                except:
+                    print "could not write "+str(value)
             fp.write("\r\n")
         for section in self._sections:
             fp.write("[%s]\r\n" % section)
             for (key, value) in self._sections[section].items():
                 if key != "__name__":
-                    fp.write(("%s=%s\r\n" %
-                             (key, unicode(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                    try:
+                        fp.write(("%s=%s\r\n" %
+                                 (key, unicode(value).replace('\n', '\r\n\t'))).encode("utf8"))
+                    except:
+                        print "could not write "+str(value)
             fp.write("\r\n")
 
 def send_file(uri,content,username=None,password=None):
@@ -80,18 +105,69 @@ def makebarcode(order_id,puzzle_id,reprint=""):
         return PRINTERKN+t+"0"
     return ""
 
+def cleanuppdf(data,v="all"):
+    pp = ""
+    if "all" in POSTPROCESS.keys():
+        pp = POSTPROCESS["all"]
+    if v in POSTPROCESS.keys():
+        pp = POSTPROCESS[v]
+    if pp=="ps2pdf":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".ps")
+        pdffd = os.fdopen(pdffd,'w')
+        pdffd.write(data)
+        pdffd.close()
+        os.system("pdf2ps %s %s"%(pdf,ps))
+        os.system("ps2pdf13 %s %s"%(ps,pdf))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    elif pp=="pstopdf":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".ps")
+        pdffd = os.fdopen(pdffd,'w')
+        pdffd.write(data)
+        pdffd.close()
+        os.system("pdftops %s %s"%(pdf,ps))
+        os.system("ps2pdf13 %s %s"%(ps,pdf))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    elif pp=="gs":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".pdf")
+        psfd = os.fdopen(psfd,'w')
+        psfd.write(data)
+        psfd.close()
+        os.system("gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dCompatibilityLevel=1.3 -r1200 -sOutputFile=%s %s"%(pdf,ps))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    elif pp=="gs14":
+        (pdffd,pdf) = tempfile.mkstemp(suffix=".pdf")
+        (psfd,ps) = tempfile.mkstemp(suffix=".pdf")
+        psfd = os.fdopen(psfd,'w')
+        psfd.write(data)
+        psfd.close()
+        os.system("gs -q -dBATCH -dNOPAUSE -sDEVICE=pdfwrite -dPDFSETTINGS=/prepress -dEmbedAllFonts=true -dSubsetFonts=true -dCompatibilityLevel=1.4 -r1200 -sOutputFile=%s %s"%(pdf,ps))
+        data = open(pdf).read()
+        os.remove(ps)
+        os.remove(pdf)
+    return data
+
 class Order:
     order_id = ""
     reprint = ""
     puzzle_id = ""
-    puzzle_type = "1000"
+    puzzle_type = "0"
     puzzle_s3 = None
     puzzle_data = None
-    puzzle_title = "Mein Puzzle"
+    puzzle_title = ""
     state = "ODR"
     template = "std"
     orientation = "horizontal"
     color = "#665533"
+    count = 1
     shipping_name = ""
     shipping_street = ""
     shipping_number = ""
@@ -104,6 +180,7 @@ class Order:
     shipping_status = None
     preview = None
     barcode = None
+    debug = False
 
     def finished(self):
         if self.printing_status:
@@ -160,6 +237,7 @@ class Order:
                 return t
             except:
                 d = d/2
+                print "retrying preview generation with res="+str(d)
         return None
 
     def createpuzzle(self,bc):
@@ -172,8 +250,14 @@ class Order:
         puzzle = ""
         puzzleio = StringIO.StringIO()
         coverio = StringIO.StringIO()
-        image = Image.open(StringIO.StringIO(self.getimage()))
-        imager = ImageReader(image)
+        (imfd,im) = tempfile.mkstemp(suffix=".jpg")
+        z = os.fdopen(imfd,'w')
+        z.write(self.getimage())
+        z.close()
+#        image = Image.open(StringIO.StringIO(self.getimage()))
+#        imager = ImageReader(image)
+        image = im
+        imager = im
         c = Canvas(puzzleio,pagesize=(dimensions[0]*mm,dimensions[1]*mm))
         if self.orientation=="horizontal":
             c.drawInlineImage(image,0,0,width=dimensions[0]*mm,height=dimensions[1]*mm)
@@ -185,11 +269,14 @@ class Order:
         c.save()
 #        pdfmetrics.standardFonts = ()
         c = Canvas(coverio,pagesize=(dimensions[2]*mm,dimensions[3]*mm))
-        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName="NimbusSanL-Regu")
-        templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos)
+        col = HexColor("#000000")
+        col.alpha = None
+        bcimg = barcode.createBarcodeDrawing("EAN13",value=bc,fontName=rl_config.defaultGraphicsFontName,textColor=col,barFillColor=col)
+        templates.rendercover(self.puzzle_type,self.template,self.orientation,self.color,c,imager,self.puzzle_title,dimensions[2],dimensions[3],bcimg,trafos,self.debug)
         c.showPage()
         c.save()
-        return (puzzleio.getvalue(),coverio.getvalue())
+        os.remove(im)
+        return (cleanuppdf(puzzleio.getvalue(),"puzzle"),cleanuppdf(coverio.getvalue(),"cover"))
 
     def makepreview(self):
         if "ODR"!=self.state:
@@ -201,9 +288,6 @@ class Order:
     def write(self,directory=None):
         if "ODR"!=self.state:
             return
-        ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
-        if not ftp:
-            return
         try:
             basename = self.generatebarcode()
             filename = basename+"."+self.state
@@ -211,29 +295,8 @@ class Order:
             data = MyConfigParser()
             puzzlepdf = "I_"+basename+".PDF"
             coverpdf = "U_"+basename+".PDF"
-            if directory:
-                try:
-                    os.mkdir(os.path.join(directory,basename))
-                except:
-                    pass
-            else:
-                try:
-                    ftp.mkd(basename)
-                except:
-                    pass
             (puzzle,cover) = self.createpuzzle(basename)
             self.preview = self.createpreview(puzzle,cover)
-
-            if directory:
-                open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
-                open(os.path.join(directory,basename,coverpdf),'w').write(cover)
-            else:
-                ftp.cwd("/")
-                ftp.cwd(basename)
-                ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
-                ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
-                self.putfile(basename+"/"+puzzlepdf,puzzle)
-                self.putfile(basename+"/"+coverpdf,cover)
 
             data.add_section("Order")
             data.set("Order","CustomersShortName",PRINTERSN)
@@ -247,10 +310,10 @@ class Order:
             data.set("Book","CoverMd5",md5.md5(cover).hexdigest())
             data.set("Book","BookType",self.generatebooktype())
             data.set("Book","PageCount","1")
-            data.set("Book","BookCount","1")
+            data.set("Book","BookCount",str(self.count))
 
             data.set("Book","DeliveryAddressCount","1")
-            data.set("Book","Delivery0BookCount","1")
+            data.set("Book","Delivery0BookCount",str(self.count))
             data.set("Book","Delivery0Name",self.shipping_name)
             data.set("Book","Delivery0Street",self.shipping_street)
             data.set("Book","Delivery0HouseNumber",self.shipping_number)
@@ -258,16 +321,46 @@ class Order:
             data.set("Book","Delivery0City",self.shipping_city)
             data.set("Book","Delivery0Country",self.shipping_country)
             data.set("Book","Delivery0ParcelService",self.shipping_provider)
-
             if self.additionaldata:
                 additionalpdf = "ADDITIONAL.PDF"
-                if directory:
-                    open(os.path.join(directory,basename,additionalpdf),'w').write(self.additionaldata)
-                else:
-                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(self.additionaldata))
-                    self.putfile(basename+"/"+additionalpdf,self.additionaldata)
+                adddata = cleanuppdf(self.additionaldata,"additional")
                 data.set("Book","Delivery0AdditionalDocuments",basename+"\\"+additionalpdf)
                 data.set("Book","Delivery0AdditionalDocumentsBackGroundIdentifier","0")
+        except Exception,e:
+            logging.warn("could not render print "+self.order_id+" "+str(e))
+            return
+
+        ftp = ftplib.FTP(PRINTERSRV,PRINTERFTPUSER,PRINTERFTPPWD)
+        if not ftp:
+            return
+        try:
+            if directory:
+                try:
+                    os.mkdir(os.path.join(directory,basename))
+                except:
+                    pass
+            else:
+                try:
+                    ftp.mkd(basename)
+                except:
+                    pass
+            if directory:
+                open(os.path.join(directory,basename,puzzlepdf),'w').write(puzzle)
+                open(os.path.join(directory,basename,coverpdf),'w').write(cover)
+            else:
+                ftp.cwd("/")
+                ftp.cwd(basename)
+                ftp.storbinary("STOR "+puzzlepdf,StringIO.StringIO(puzzle))
+                ftp.storbinary("STOR "+coverpdf,StringIO.StringIO(cover))
+                self.putfile(basename+"/"+puzzlepdf,puzzle)
+                self.putfile(basename+"/"+coverpdf,cover)
+
+            if self.additionaldata:
+                if directory:
+                    open(os.path.join(directory,basename,additionalpdf),'w').write(adddata)
+                else:
+                    ftp.storbinary("STOR "+additionalpdf,StringIO.StringIO(adddata))
+                    self.putfile(basename+"/"+additionalpdf,adddata)
             dataio = StringIO.StringIO()
             data.write(dataio)
             if directory:
@@ -301,7 +394,6 @@ class Order:
             except:
                 pass
         else:
-            print "reading status only from status for "+str(fn)
             self.state = "ACC"
         for sfp in statusfp:
             status = MyConfigParser()
@@ -339,6 +431,8 @@ def readorders(ext=['FLT','ACC'],barcodes=[]):
         statuslist = [x for x in files if x.endswith(".STA")]
         statuslist.sort(reverse=True)
         status = []
+        if len(statuslist)>30:
+            statuslist = statuslist[0:30]
         for fn in statuslist:
             statusio = StringIO.StringIO()
             ftp.retrbinary("RETR "+fn,lambda x:statusio.write(x))
@@ -354,6 +448,7 @@ def readorders(ext=['FLT','ACC'],barcodes=[]):
             status.append(t)
         for fn in [x for x in files if x[-3:] in ext]:
             v = StringIO.StringIO()
+            logging.info("reading "+fn)
             ftp.retrbinary("RETR "+fn,lambda x:v.write(x))
             o = Order.fromFile(fn,v.getvalue(),status)
             if o.barcode in barcodes:
@@ -380,7 +475,7 @@ def putorder(orderid,puzzleid,s3,template="std",orientation="horizontal",color="
     order.shipping_country = address["country"]
     order.write(directory=directory)
 
-def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="2153432",puzzleid="837642"):
+def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="2153432",puzzleid="837642",debug=False):
     order = Order()
     order.puzzle_s3 = s3
     order.puzzle_title = title
@@ -393,6 +488,7 @@ def demo(d,s3,title,color=None,orientation=None,puzzle_type=None,orderid="215343
     order.shipping_city = "Bad Musterstadt"
     order.shipping_country = "Deutschland"
     order.shipping_provider = "DHL"
+    order.debug = debug
     if color:
         order.color = color
     if orientation:

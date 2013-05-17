@@ -1,6 +1,7 @@
 from puzzlesettings import *
 
 from django.db import models
+
 import random,datetime,time,re
 
 def randid(t):
@@ -24,6 +25,7 @@ class Order(models.Model):
         (u"N", u"New"),
         (u"P", u"Processing"),
         (u"F", u"Finished"),
+        (u"A", u"Aborted"),
     )
     SHIPPING = (
         (u"N", u"New"),
@@ -43,9 +45,11 @@ class Order(models.Model):
         (u"A", u"Approved"),
     )
     order_id = models.CharField(max_length=64,default=randid("o"),verbose_name="Shopify Order id")
+    order_number = models.CharField(max_length=64,blank=True,null=True,verbose_name="Shopify Order number")
     order_date = models.DateTimeField("order date",default=time.strftime("%Y-%m-%d %H:%M:%S"))
     order_status = models.CharField(max_length=4,choices=STATUS,default="N")
-    shipping_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify Shipping id")
+    shipping_id = models.CharField(max_length=64,default=randid("s"),verbose_name="Shopify Shipping id")
+    shipping_email = models.CharField(max_length=255,blank=True,null=True)
     shipping_name = models.CharField(max_length=255)
     shipping_street = models.CharField(max_length=255)
     shipping_number = models.CharField(max_length=255)
@@ -84,7 +88,11 @@ class Puzzle(models.Model):
         (u"P", u"Processing"),
         (u"F", u"Finished"),
     )
-    puzzle_id = models.CharField(max_length=64,default=randid("s"),unique=True,verbose_name="Shopify line item")
+    COSTSTATUS = (
+        (u"N", u"Open"),
+        (u"A", u"Accounted"),
+    )
+    puzzle_id = models.CharField(max_length=64,default=randid("s"),verbose_name="Shopify line item")
     puzzle_barcode = models.CharField(max_length=64,blank=True,null=True,verbose_name="Printer barcode")
     puzzle_status = models.CharField(max_length=255,blank=True,null=True,verbose_name="Printing status")
     puzzle_type = models.CharField(max_length=64,choices=TYPES)
@@ -93,6 +101,12 @@ class Puzzle(models.Model):
     puzzle_color = models.CharField(max_length=64,choices=COLORTABLE)
     puzzle_title = models.CharField(max_length=256,blank=True)
     puzzle_text = models.CharField(max_length=1000,blank=True)
+    count = models.IntegerField(default=1,verbose_name="Puzzle print count")
+    coststatus = models.CharField(max_length=64,blank=True,null=True,choices=COSTSTATUS)
+    cost = models.DecimalField(max_digits=12,decimal_places=2,default=0,null=True,verbose_name="Incurred cost")
+    reprint_number = models.IntegerField(null=True,blank=True,verbose_name="Reprint number")
+    reprint_number = models.IntegerField(null=True,blank=True,verbose_name="Reprint number")
+    reprint_reason = models.CharField(max_length=255,blank=True,null=True,verbose_name="Reprint reason")
     printing_status = models.CharField(max_length=1000,choices=PRINTINGSTATUS,default="N")
     preview = models.ImageField(upload_to='preview',width_field="preview_width",height_field="preview_height",null=True,blank=True)
     preview_width = models.PositiveIntegerField(null=True,blank=True)
@@ -106,7 +120,7 @@ class Image(models.Model):
         (u"O", u"Other"),
     )
     image_type = models.CharField(max_length=4,choices=IMAGETYPES)
-    image_s3 = models.CharField(max_length=255,unique=True)
+    image_s3 = models.CharField(max_length=255)
     puzzle = models.ForeignKey(Puzzle)
 
 class Lock(models.Model):

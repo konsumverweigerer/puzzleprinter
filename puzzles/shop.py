@@ -1,6 +1,10 @@
 from puzzlesettings import *
 from shopify import *
 
+import logging
+
+logger = logging.getLogger(__name__)
+
 ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIFYPWD,SHOPIFYSHOP)
 
 # Variant string: #puzzle_name#|#box_title#|#sizeId#|#formatId#|#boxTypeId#|#boxColorId#|#imgToken#
@@ -55,7 +59,16 @@ ShopifyResource.site = "https://%s:%s@%s.myshopify.com/admin"%(SHOPIFYKEY,SHOPIF
 
 def openOrders(since_id=None,financial_status="paid"):
     orders = [(details(0,order=x.to_dict()),x) for x in Order.find(limit=250,financial_status=financial_status,since_id=since_id) if x.attributes["fulfillment_status"]==None]
+    logging.info("have %s orders from shopify"%(len(orders)))
     return [(x[0][0],x[0][1],x[0][2],x[0][3],x[1]) for x in orders if len(x[0][2])>0]
+
+def deadOrders(financial_status="abandoned"):
+    orders = [(x.to_dict(),x) for x in Order.find(limit=250,financial_status=financial_status)]
+    return orders
+
+def oldOrders(financial_status="abandoned"):
+    orders = [(x.to_dict(),x) for x in Order.find(limit=250,financial_status=financial_status)]
+    return orders
 
 def sentOrders():
     orders = [x.to_dict() for x in Order.find(limit=250,financial_status="paid") if x.attributes["fulfillment_status"]!=None]
@@ -64,7 +77,14 @@ def sentOrders():
 def details(orderid,order=None):
     if not order:
         order = Order.get(int(orderid))
-    products = [(x,x["variants"][0]["option1"].split("|")) for x in [Product.get(p["product_id"]) for p in order["line_items"] if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x["variants"])==1]
+    try:
+        products = [(x[0],x[0]["variants"][0]["option1"].split("|"),x[1]) 
+                    for x in [(Product.get(p["product_id"]),p["quantity"]) 
+                              for p in order["line_items"] 
+                              if p["requires_shipping"] and p["fulfillment_status"]==None] if len(x[0]["variants"])==1]
+    except:
+        print "could not get product for "+str(order["id"])
+        products = []
     shipping = {}
     if "shipping_address" in order.keys():
         shipping = order["shipping_address"]
@@ -100,3 +120,9 @@ def endFullfillment(orderid,status=None):
         order.close()
     return order
 
+def deleteProduct(productid):
+    try:
+        shopify.Product.delete(productid)
+    except:
+        return False
+    return True
