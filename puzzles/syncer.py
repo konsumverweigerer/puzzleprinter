@@ -7,7 +7,7 @@ from xhtml2pdf import document
 from pyPdf import pdf
 
 import logging,StringIO,os
-import string,sys
+import string,sys,urlparse
 import random,datetime,time,re
 reload(sys)
 
@@ -30,13 +30,15 @@ def readinvoice(orderid=None):
     br.form = form
     r = br.submit()
     t = r.read()
+    if "unsupported_browser_bypass" in t:
+        br.open(urlparse.urljoin(url,"/admin/2/unsupported_browser_bypass"))
     hh = mechanize.HTTPHandler()
     hsh = mechanize.HTTPSHandler()
     opener = mechanize.build_opener(hh, hsh)
     mechanize.install_opener(opener)
     data = [t]
     for inv in INVOICEID.split(","):
-        req = mechanize.Request("%s%s?template_id=%s"%(SHOPINVOICEURL,orderid,inv))
+        req = mechanize.Request("%s%s/render_template?template_id=%s"%(SHOPINVOICEAPIURL,orderid,inv))
         req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
         req.add_header('X-Requested-With','XMLHttpRequest')
         req.add_header('Referer',url)

@@ -95,7 +95,7 @@ def startFullfillment(orderid):
     fs = order.attributes["fulfillments"]
     if len(fs)>0:
         return fs[0]
-    f = Fulfillment(dict(order_id=orderid))
+    f = Fulfillment(dict(order_id=orderid,line_items=[]))
     f.save()
     return f
 
