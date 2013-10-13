@@ -182,6 +182,8 @@ def makepuzzlereprint(puzzle,reprint_reason="Reprinting"):
             newimage.save()
         previewpuzzle(newpuzzle)
         newpuzzle.save()
+        order.printsync = "N" 
+        order.save()
     finally:
         unlock("newprints")
 
