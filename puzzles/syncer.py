@@ -7,7 +7,7 @@ from xhtml2pdf import document
 from pyPdf import pdf
 
 import logging,StringIO,os
-import string,sys,urlparse
+import string,sys,urlparse,json
 import random,datetime,time,re
 reload(sys)
 
@@ -18,6 +18,9 @@ COUNTRYMAP = {
 def readinvoice(orderid=None):
     if not orderid:
         return ("","")
+    fpath = os.path.join(BASEDIR,"puzzles","data",str(orderid)+".pdf")
+    if os.path.exists(fpath):
+        return [open(fpath).read()]
     cj = mechanize.CookieJar()
     br = mechanize.Browser()
     br.set_cookiejar(cj)
@@ -34,14 +37,51 @@ def readinvoice(orderid=None):
         br.open(urlparse.urljoin(url,"/admin/2/unsupported_browser_bypass"))
     hh = mechanize.HTTPHandler()
     hsh = mechanize.HTTPSHandler()
+    hh.set_http_debuglevel(1)
+    hsh.set_http_debuglevel(1)
     opener = mechanize.build_opener(hh, hsh)
     mechanize.install_opener(opener)
+    apiurl = "%s%s?shop=%s"%(SHOPINVOICEURL,orderid,SHOPIFYSHOP+".myshopify.com")
+    req = mechanize.Request(apiurl)
+    req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
+    req.add_header('Referer',url)
+    cj.add_cookie_header(req)
+    res = mechanize.urlopen(req)
+    t = res.read()
+    meta = re.compile('<meta([^>]*)>')
+    content = re.compile('content="([^"]*)"')
+    tokens = [content.findall(x)[0] for x in meta.findall(t) if x.find("csrf-token")>0]
+    token = tokens[0]
+    req = mechanize.Request(urlparse.urljoin(SHOPINVOICEURL,"/admin/api_permissions/order-printer.json"))
+    req.add_header('Accept','application/json,text/javascript,*/*;q=0.01')
+    req.add_header('Referer',url)
+    req.add_header('Connection','keep-alive')
+    req.add_header('X-CSRF-Token',token)
+    req.add_header('X-Requested-With','XMLHttpRequest')
+    req.add_header('X-Shopify-Api-Features','pagination-headers')
+    cj.add_cookie_header(req)
+    res = mechanize.urlopen(req)
+    t = res.read()
+    api = json.loads(t)
+    url = api['api_permission']['app_url'].replace('?','/orders/'+str(orderid)+'?')+'&admin=1'
+    req = mechanize.Request(url)
+    req.add_header('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
+    req.add_header('Connection','keep-alive')
+    req.add_header('Referer',apiurl)
+    req.add_header('Host','orderprinter.shopifyapps.com')
+    cj.add_cookie_header(req)
+    res = mechanize.urlopen(req)
+    t = res.read()
     data = [t]
     for inv in INVOICEID.split(","):
-        req = mechanize.Request("%s%s/render_template?template_id=%s"%(SHOPINVOICEAPIURL,orderid,inv))
-        req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
+        requrl = "%s%s/render_template?template_id=%s"%(SHOPINVOICEAPIURL,orderid,inv)
+        req = mechanize.Request(requrl)
+        req.add_header('Accept','*/*')
         req.add_header('X-Requested-With','XMLHttpRequest')
+        req.add_header('X-CSRF-Token',token)
+        req.add_header('Connection','keep-alive')
         req.add_header('Referer',url)
+        req.add_header('Host','orderprinter.shopifyapps.com')
         cj.add_cookie_header(req)
         res = mechanize.urlopen(req)
         data.append((inv,res.read()))
@@ -51,10 +91,13 @@ def addinvoicewrap(i):
     return "<div id=\"preview\" class=\"clearfix preview-content\"><div id=\"preview-%s\">%s</div></div>"%(i[0],i[1])
 
 def renderinvoice(invoice):
+    if len(invoice)==1:
+        return invoice[0]
     writer = pdf.PdfFileWriter()
     w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html")).read()
-    for i in (w%(addinvoicewrap(x)) for x in invoice[1:]):
+    for i in (w.replace("{CONTENT}",addinvoicewrap(x)) for x in invoice[1:]):
         o = StringIO.StringIO()
+        print i
         document.pisaDocument(StringIO.StringIO(i),o)
         writer.addPage(pdf.PdfFileReader(StringIO.StringIO(o.getvalue())).getPage(0))
     o = StringIO.StringIO()
