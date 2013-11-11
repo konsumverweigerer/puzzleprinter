@@ -7,7 +7,7 @@ from xhtml2pdf import document
 from pyPdf import pdf
 
 import logging,StringIO,os
-import string,sys,urlparse,json
+import string,sys,urlparse,json,urllib2
 import random,datetime,time,re
 reload(sys)
 
@@ -23,10 +23,20 @@ def readinvoice(orderid=None):
         return [open(fpath).read()]
     cj = mechanize.CookieJar()
     br = mechanize.Browser()
+    hh = mechanize.HTTPHandler()
+    hsh = mechanize.HTTPSHandler()
+    opener = mechanize.build_opener(hh, hsh)
+    mechanize.install_opener(opener)
+    # hh.set_http_debuglevel(1)
+    # hsh.set_http_debuglevel(1)
+    # br.set_debug_http(sys.stdout)
+    # br.set_debug_responses(sys.stdout)
     br.set_cookiejar(cj)
-    url = "%s%s?shop=%s"%(SHOPINVOICEURL,orderid,SHOPIFYSHOP)
     br.set_handle_robots(False)
-    br.open(url)
+    locre = re.compile("^.*location.href *= *'([^']*)'.*$", re.DOTALL)
+    
+    loginurl = SHOPINVOICEURL+"/admin/auth/login"
+    br.open(loginurl, timeout=30)
     form = [x for x in br.forms()][0]
     form.set_value(SHOPPWD,'password')
     form.set_value(SHOPLOGIN,'login')
@@ -34,61 +44,77 @@ def readinvoice(orderid=None):
     r = br.submit()
     t = r.read()
     if "unsupported_browser_bypass" in t:
-        br.open(urlparse.urljoin(url,"/admin/2/unsupported_browser_bypass"))
-    hh = mechanize.HTTPHandler()
-    hsh = mechanize.HTTPSHandler()
-    hh.set_http_debuglevel(1)
-    hsh.set_http_debuglevel(1)
-    opener = mechanize.build_opener(hh, hsh)
-    mechanize.install_opener(opener)
-    apiurl = "%s%s?shop=%s"%(SHOPINVOICEURL,orderid,SHOPIFYSHOP+".myshopify.com")
-    req = mechanize.Request(apiurl)
-    req.add_header('Accept','text/javascript, text/html, application/xml, text/xml, */*')
-    req.add_header('Referer',url)
-    cj.add_cookie_header(req)
-    res = mechanize.urlopen(req)
-    t = res.read()
+        usurl = urlparse.urljoin(SHOPINVOICEURL,"/admin/2/unsupported_browser_bypass")
+        r = br.open(usurl, timeout=30)
+        t = r.read()
+    
     meta = re.compile('<meta([^>]*)>')
     content = re.compile('content="([^"]*)"')
     tokens = [content.findall(x)[0] for x in meta.findall(t) if x.find("csrf-token")>0]
     token = tokens[0]
-    req = mechanize.Request(urlparse.urljoin(SHOPINVOICEURL,"/admin/api_permissions/order-printer.json"))
+    
+    opjson = urlparse.urljoin(SHOPINVOICEURL,"/admin/api_permissions/order-printer.json")
+    req = mechanize.Request(opjson)
     req.add_header('Accept','application/json,text/javascript,*/*;q=0.01')
-    req.add_header('Referer',url)
-    req.add_header('Connection','keep-alive')
     req.add_header('X-CSRF-Token',token)
     req.add_header('X-Requested-With','XMLHttpRequest')
-    req.add_header('X-Shopify-Api-Features','pagination-headers')
     cj.add_cookie_header(req)
     res = mechanize.urlopen(req)
     t = res.read()
-    api = json.loads(t)
-    url = api['api_permission']['app_url'].replace('?','/orders/'+str(orderid)+'?')+'&admin=1'
-    req = mechanize.Request(url)
-    req.add_header('Accept','text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8')
-    req.add_header('Connection','keep-alive')
-    req.add_header('Referer',apiurl)
-    req.add_header('Host','orderprinter.shopifyapps.com')
+    opjsonapi = json.loads(t)
+    
+    apikey = opjsonapi['api_permission']['api_client']['api_key']
+
+    r = br.open(opjsonapi['api_permission']['app_url'])
+    authurl = locre.match(r.read()).group(1)
+    r  = br.open(authurl)
+    authjsonurl = r.geturl().replace("authorize?", "authorize.json?").replace("response_type=code&", "")
+
+    #apjson = urlparse.urljoin(SHOPINVOICEURL,"/admin/api_permissions/"+apikey+".json")
+    #req = mechanize.Request(apjson)
+    #req.add_header('Accept','application/json,text/javascript,*/*;q=0.01')
+    #req.add_header('X-CSRF-Token',token)
+    #req.add_header('X-Requested-With','XMLHttpRequest')
+    #cj.add_cookie_header(req)
+    #res = mechanize.urlopen(req)
+    #t = res.read()
+    #apjsonapi = json.loads(t)
+
+    req = mechanize.Request(urlparse.urljoin(SHOPINVOICEURL,authjsonurl))
+    req.add_header('Accept','application/json,text/javascript,*/*;q=0.01')
+    req.add_header('X-CSRF-Token',token)
+    req.add_header('X-Requested-With','XMLHttpRequest')
     cj.add_cookie_header(req)
     res = mechanize.urlopen(req)
     t = res.read()
-    data = [t]
+    aujsonapi = json.loads(t)
+
+    cburl = aujsonapi['url']
+    r = br.open(cburl)
+
+    data = [r.read()]
+    
     for inv in INVOICEID.split(","):
-        requrl = "%s%s/render_template?template_id=%s"%(SHOPINVOICEAPIURL,orderid,inv)
+        requrl = urlparse.urljoin(SHOPINVOICEAPIURL, "/orders/%s/render_template?template_id=%s"%(orderid,inv))
         req = mechanize.Request(requrl)
         req.add_header('Accept','*/*')
         req.add_header('X-Requested-With','XMLHttpRequest')
         req.add_header('X-CSRF-Token',token)
-        req.add_header('Connection','keep-alive')
-        req.add_header('Referer',url)
-        req.add_header('Host','orderprinter.shopifyapps.com')
+        req.add_header('Referer',cburl)
         cj.add_cookie_header(req)
         res = mechanize.urlopen(req)
-        data.append((inv,res.read()))
+        t = res.read()
+        data.append((inv,t))
     return data
 
 def addinvoicewrap(i):
     return "<div id=\"preview\" class=\"clearfix preview-content\"><div id=\"preview-%s\">%s</div></div>"%(i[0],i[1])
+
+def link_callback(url,  rel):
+    try:
+        return urllib2.urlopen(url)
+    except:
+        return open(os.path.join(BASEDIR,"puzzles","templates","blank.png"))
 
 def renderinvoice(invoice):
     if len(invoice)==1:
@@ -97,8 +123,7 @@ def renderinvoice(invoice):
     w = open(os.path.join(BASEDIR,"puzzles","templates","invoicewrap.html")).read()
     for i in (w.replace("{CONTENT}",addinvoicewrap(x)) for x in invoice[1:]):
         o = StringIO.StringIO()
-        print i
-        document.pisaDocument(StringIO.StringIO(i),o)
+        document.pisaDocument(StringIO.StringIO(i),o, link_callback=link_callback)
         writer.addPage(pdf.PdfFileReader(StringIO.StringIO(o.getvalue())).getPage(0))
     o = StringIO.StringIO()
     writer.write(o)
