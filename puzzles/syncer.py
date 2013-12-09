@@ -27,8 +27,8 @@ def readinvoice(orderid=None):
     hsh = mechanize.HTTPSHandler()
     opener = mechanize.build_opener(hh, hsh)
     mechanize.install_opener(opener)
-    # hh.set_http_debuglevel(1)
-    # hsh.set_http_debuglevel(1)
+    hh.set_http_debuglevel(1)
+    hsh.set_http_debuglevel(1)
     # br.set_debug_http(sys.stdout)
     # br.set_debug_responses(sys.stdout)
     br.set_cookiejar(cj)
@@ -93,9 +93,12 @@ def readinvoice(orderid=None):
     r = br.open(cburl)
 
     data = [r.read()]
+
+    reor = re.compile('"/([0-9]*)/orders/'+orderid+'"')
+    dat = reor.findall(data[0])
     
     for inv in INVOICEID.split(","):
-        requrl = urlparse.urljoin(SHOPINVOICEAPIURL, "/orders/%s/render_template?template_id=%s"%(orderid,inv))
+        requrl = urlparse.urljoin(SHOPINVOICEAPIURL, "/"+dat[0]+"/orders/%s/render_template?template_id=%s"%(orderid,inv))
         req = mechanize.Request(requrl)
         req.add_header('Accept','*/*')
         req.add_header('X-Requested-With','XMLHttpRequest')
