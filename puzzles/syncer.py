@@ -9,6 +9,8 @@ from pyPdf import pdf
 import logging,StringIO,os
 import string,sys,urlparse,json,urllib2
 import random,datetime,time,re
+from dateutil import parser
+
 reload(sys)
 
 COUNTRYMAP = {
@@ -50,6 +52,7 @@ def readinvoice(orderid=None):
     
     meta = re.compile('<meta([^>]*)>')
     content = re.compile('content="([^"]*)"')
+    print t
     tokens = [content.findall(x)[0] for x in meta.findall(t) if x.find("csrf-token")>0]
     token = tokens[0]
     
@@ -176,7 +179,7 @@ def addneworders(force=False):
 def addneworder(order):
     if len(models.Order.objects.filter(order_id=order[0]))==0:
         shipping_address = order[1]["shipping_address"]
-        neworder = models.Order(order_id=order[0],order_date=order[1]["created_at"].strftime("%Y-%m-%d %H:%M:%S"),shipping_id=order[0])
+        neworder = models.Order(order_id=order[0],order_date=parser.parse(order[1]["created_at"]).strftime("%Y-%m-%d %H:%M:%S"),shipping_id=order[0])
         neworder.shipping_name = shipping_address["name"]
         t = models.splitaddress(shipping_address["address1"])
         neworder.shipping_street = t[0]
